@@ -242,10 +242,10 @@ body{background:#0f1923;overflow:hidden;font-family:'Exo 2',sans-serif;user-sele
 
 // ========== BRAWLER DEFINITIONS ==========
 const BRAWLERS = [
-  { name:'Blaze',role:'Fighter',icon:'\U0001f525',color:'#ff7043',hp:5000,speed:3.2,damage:600,range:280,reload:0.5,projectileSpeed:8,projectileSize:6,burstCount:1,maxAmmo:3,abilityName:'Flame Dash',abilityCd:5,abilityDesc:'Dash forward leaving fire trail',superName:'Inferno',superCd:12,superDesc:'AoE fire explosion' },
-  { name:'Frostbite',role:'Sharpshooter',icon:'\u2744\ufe0f',color:'#4fc3f7',hp:3200,speed:2.8,damage:1100,range:450,reload:0.5,projectileSpeed:12,projectileSize:4,burstCount:1,maxAmmo:3,abilityName:'Ice Wall',abilityCd:8,abilityDesc:'Create a blocking ice wall',superName:'Blizzard',superCd:15,superDesc:'Slow all enemies in area' },
-  { name:'Tank',role:'Heavyweight',icon:'\U0001f6e1\ufe0f',color:'#66bb6a',hp:8000,speed:2.4,damage:400,range:160,reload:0.5,projectileSpeed:6,projectileSize:10,burstCount:3,maxAmmo:3,abilityName:'Shield Up',abilityCd:6,abilityDesc:'Block 50% damage for 3s',superName:'Ground Pound',superCd:10,superDesc:'Stun nearby enemies' },
-  { name:'Phantom',role:'Assassin',icon:'\U0001f47b',color:'#ab47bc',hp:3600,speed:3.8,damage:800,range:200,reload:0.5,projectileSpeed:10,projectileSize:5,burstCount:2,maxAmmo:4,abilityName:'Blink',abilityCd:4,abilityDesc:'Teleport short distance',superName:'Shadow Strike',superCd:11,superDesc:'Dash to target, massive damage' }
+  { name:'Blaze',role:'Fighter',icon:'🔥',color:'#ff7043',hp:5000,speed:3.2,damage:600,range:280,reload:0.5,projectileSpeed:8,projectileSize:6,burstCount:1,maxAmmo:3,abilityName:'Flame Dash',abilityCd:5,abilityDesc:'Dash forward leaving fire trail',superName:'Inferno',superCd:12,superDesc:'AoE fire explosion' },
+  { name:'Frostbite',role:'Sharpshooter',icon:'❄️',color:'#4fc3f7',hp:3200,speed:2.8,damage:1100,range:450,reload:0.5,projectileSpeed:12,projectileSize:4,burstCount:1,maxAmmo:3,abilityName:'Ice Wall',abilityCd:8,abilityDesc:'Create a blocking ice wall',superName:'Blizzard',superCd:15,superDesc:'Slow all enemies in area' },
+  { name:'Tank',role:'Heavyweight',icon:'🛡️',color:'#66bb6a',hp:8000,speed:2.4,damage:400,range:160,reload:0.5,projectileSpeed:6,projectileSize:10,burstCount:3,maxAmmo:3,abilityName:'Shield Up',abilityCd:6,abilityDesc:'Block 50% damage for 3s',superName:'Ground Pound',superCd:10,superDesc:'Stun nearby enemies' },
+  { name:'Phantom',role:'Assassin',icon:'👻',color:'#ab47bc',hp:3600,speed:3.8,damage:800,range:200,reload:0.5,projectileSpeed:10,projectileSize:5,burstCount:2,maxAmmo:4,abilityName:'Blink',abilityCd:4,abilityDesc:'Teleport short distance',superName:'Shadow Strike',superCd:11,superDesc:'Dash to target, massive damage' }
 ];
 let selectedBrawler = 0;
 
@@ -1266,7 +1266,7 @@ function render() {
     // STUN
     if (ent.stunTimer > 0) { for(var i=0;i<3;i++) { var a=Date.now()/200+(Math.PI*2/3)*i;
       ctx.fillStyle='#ffeb3b'; ctx.font='bold 12px serif'; ctx.textAlign='center';
-      ctx.fillText('\u2605',Math.cos(a)*20,-26+Math.sin(a)*5); }}
+      ctx.fillText('★',Math.cos(a)*20,-26+Math.sin(a)*5); }}
 
     ctx.restore();
 
@@ -1547,7 +1547,7 @@ function render() {
     ctx.font = '14px serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
-    ctx.fillText('\u2620', W/2 - 95, y + 5);
+    ctx.fillText('☠', W/2 - 95, y + 5);
 
     // Text
     ctx.font = 'bold 13px "Exo 2"';
@@ -1676,7 +1676,7 @@ const DEFAULT_SAVE={coins:500,bling:100,trophies:0,brawlers:[{id:0,unlocked:true
 let saveData;
 function loadSave(){try{const r=localStorage.getItem('brawlarena_save');saveData=r?JSON.parse(r):JSON.parse(JSON.stringify(DEFAULT_SAVE))}catch(e){saveData=JSON.parse(JSON.stringify(DEFAULT_SAVE))}if(!saveData.quests||Date.now()-saveData.questsLastRefresh>86400000)generateQuests()}
 function saveToDisk(){try{localStorage.setItem('brawlarena_save',JSON.stringify(saveData))}catch(e){}}
-function generateQuests(){const pool=[{desc:'Deal 5000 damage',type:'damage',target:5000,reward:100,rewardType:'coins',icon:'\U0001f4a5'},{desc:'Get 3 kills',type:'kills',target:3,reward:80,rewardType:'coins',icon:'\u2620\ufe0f'},{desc:'Collect 10 gems',type:'gems',target:10,reward:120,rewardType:'coins',icon:'\U0001f48e'},{desc:'Win a match',type:'wins',target:1,reward:50,rewardType:'bling',icon:'\U0001f3c6'},{desc:'Play 3 matches',type:'games',target:3,reward:150,rewardType:'coins',icon:'\U0001f3ae'},{desc:'Get 5 kills',type:'kills',target:5,reward:40,rewardType:'bling',icon:'\U0001f525'},{desc:'Deal 10000 damage',type:'damage',target:10000,reward:200,rewardType:'coins',icon:'\u2694\ufe0f'},{desc:'Collect 20 gems',type:'gems',target:20,reward:60,rewardType:'bling',icon:'\u2728'}];const s=pool.sort(()=>Math.random()-0.5);saveData.quests=s.slice(0,3).map(q=>({...q,progress:0,claimed:false}));saveData.questsLastRefresh=Date.now();saveToDisk()}
+function generateQuests(){const pool=[{desc:'Deal 5000 damage',type:'damage',target:5000,reward:100,rewardType:'coins',icon:'💥'},{desc:'Get 3 kills',type:'kills',target:3,reward:80,rewardType:'coins',icon:'☠️'},{desc:'Collect 10 gems',type:'gems',target:10,reward:120,rewardType:'coins',icon:'💎'},{desc:'Win a match',type:'wins',target:1,reward:50,rewardType:'bling',icon:'🏆'},{desc:'Play 3 matches',type:'games',target:3,reward:150,rewardType:'coins',icon:'🎮'},{desc:'Get 5 kills',type:'kills',target:5,reward:40,rewardType:'bling',icon:'🔥'},{desc:'Deal 10000 damage',type:'damage',target:10000,reward:200,rewardType:'coins',icon:'⚔️'},{desc:'Collect 20 gems',type:'gems',target:20,reward:60,rewardType:'bling',icon:'✨'}];const s=pool.sort(()=>Math.random()-0.5);saveData.quests=s.slice(0,3).map(q=>({...q,progress:0,claimed:false}));saveData.questsLastRefresh=Date.now();saveToDisk()}
 const UPGRADE_COSTS=[0,20,30,50,80,120,200,300,400];
 const COIN_COSTS=[0,20,35,75,140,280,550,1000,1500];
 const SKINS={0:[{id:'default',name:'Default',cost:0,type:'free',color:'#ff7043'},{id:'inferno',name:'Inferno',cost:50,type:'bling',color:'#ff1744'},{id:'golden',name:'Golden Blaze',cost:150,type:'bling',color:'#ffd740'}],1:[{id:'default',name:'Default',cost:0,type:'free',color:'#4fc3f7'},{id:'arctic',name:'Arctic',cost:50,type:'bling',color:'#e0f7fa'},{id:'dark_ice',name:'Dark Ice',cost:150,type:'bling',color:'#1a237e'}],2:[{id:'default',name:'Default',cost:0,type:'free',color:'#66bb6a'},{id:'war_machine',name:'War Machine',cost:50,type:'bling',color:'#546e7a'},{id:'gold_armor',name:'Gold Armor',cost:150,type:'bling',color:'#f9a825'}],3:[{id:'default',name:'Default',cost:0,type:'free',color:'#ab47bc'},{id:'void',name:'Void',cost:50,type:'bling',color:'#1a1a2e'},{id:'neon',name:'Neon Ghost',cost:150,type:'bling',color:'#00e676'}]};
@@ -1780,7 +1780,7 @@ function drawCharPreview() {
     c.fillStyle = '#ef5350';
     c.font = 'bold 14px "Russo One"';
     c.textAlign = 'center';
-    c.fillText('\U0001f512 Locked', 150, 315);
+    c.fillText('🔒 Locked', 150, 315);
   }
 
   document.getElementById('char-name').textContent = b.name;
@@ -1838,11 +1838,11 @@ function renderUpgradePanel() {
   const el = document.getElementById('upgrade-content');
 
   if (!bd.unlocked) {
-    el.innerHTML = '<div style="text-align:center;padding:30px"><div style="font-size:64px;margin-bottom:16px">'+b.icon+'</div><div style="font-family:Russo One;font-size:20px;margin-bottom:8px">'+b.name+'</div><div style="color:rgba(255,255,255,0.4);margin-bottom:20px">'+b.role+'</div><button class="unlock-panel-btn" onclick="unlockBrawler('+selectedBrawler+')">Unlock for 500 \U0001fa99</button></div>';
+    el.innerHTML = '<div style="text-align:center;padding:30px"><div style="font-size:64px;margin-bottom:16px">'+b.icon+'</div><div style="font-family:Russo One;font-size:20px;margin-bottom:8px">'+b.name+'</div><div style="color:rgba(255,255,255,0.4);margin-bottom:20px">'+b.role+'</div><button class="unlock-panel-btn" onclick="unlockBrawler('+selectedBrawler+')">Unlock for 500 🪙</button></div>';
     return;
   }
 
-  el.innerHTML = '<div class="upgrade-layout"><div class="upgrade-preview"><div class="up-icon" style="background:'+b.color+'33;border-color:'+b.color+'">'+b.icon+'</div><div style="font-family:Russo One;font-size:18px">'+b.name+'</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Level '+bd.level+' / 9</div></div><div class="upgrade-info"><div class="up-stats"><div class="up-stat"><div class="up-stat-label">HP</div><div class="up-stat-val">'+(b.hp+(bd.level-1)*200)+'</div></div><div class="up-stat"><div class="up-stat-label">DMG</div><div class="up-stat-val">'+(b.damage+(bd.level-1)*30)+'</div></div><div class="up-stat"><div class="up-stat-label">Range</div><div class="up-stat-val">'+b.range+'</div></div><div class="up-stat"><div class="up-stat-label">Speed</div><div class="up-stat-val">'+b.speed+'</div></div></div><div class="up-pp-label">Power Points: '+bd.powerPoints+' / '+pp+'</div><div class="up-pp-bar"><div class="up-pp-fill" style="width:'+Math.min(100,(bd.powerPoints/pp)*100)+'%"></div></div>'+(bd.level<9?'<button class="up-btn '+(can?'':'disabled')+'" onclick="upgradeBrawler('+selectedBrawler+')">Upgrade \u2014 '+cc+' \U0001fa99</button>':'<div class="up-max">\u2728 MAX LEVEL \u2728</div>')+'</div></div>';
+  el.innerHTML = '<div class="upgrade-layout"><div class="upgrade-preview"><div class="up-icon" style="background:'+b.color+'33;border-color:'+b.color+'">'+b.icon+'</div><div style="font-family:Russo One;font-size:18px">'+b.name+'</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Level '+bd.level+' / 9</div></div><div class="upgrade-info"><div class="up-stats"><div class="up-stat"><div class="up-stat-label">HP</div><div class="up-stat-val">'+(b.hp+(bd.level-1)*200)+'</div></div><div class="up-stat"><div class="up-stat-label">DMG</div><div class="up-stat-val">'+(b.damage+(bd.level-1)*30)+'</div></div><div class="up-stat"><div class="up-stat-label">Range</div><div class="up-stat-val">'+b.range+'</div></div><div class="up-stat"><div class="up-stat-label">Speed</div><div class="up-stat-val">'+b.speed+'</div></div></div><div class="up-pp-label">Power Points: '+bd.powerPoints+' / '+pp+'</div><div class="up-pp-bar"><div class="up-pp-fill" style="width:'+Math.min(100,(bd.powerPoints/pp)*100)+'%"></div></div>'+(bd.level<9?'<button class="up-btn '+(can?'':'disabled')+'" onclick="upgradeBrawler('+selectedBrawler+')">Upgrade — '+cc+' 🪙</button>':'<div class="up-max">✨ MAX LEVEL ✨</div>')+'</div></div>';
 }
 
 function renderShopPanel() {
@@ -1854,11 +1854,11 @@ function renderShopPanel() {
     SKINS[bi].forEach(skin => {
       if (skin.type === 'free') return;
       const owned = bd.skin === skin.id;
-      h += '<div class="shop-card"><div class="sc-preview" style="background:'+skin.color+'33;border-color:'+skin.color+'">'+b.icon+'</div><div class="sc-name">'+skin.name+'</div><div class="sc-sub">'+b.name+'</div>'+(owned?'<div class="sc-owned">Equipped \u2713</div>':'<button class="sc-btn" onclick="buySkin('+bi+',\''+skin.id+'\','+skin.cost+')">'+skin.cost+' \U0001f48e</button>')+'</div>';
+      h += '<div class="shop-card"><div class="sc-preview" style="background:'+skin.color+'33;border-color:'+skin.color+'">'+b.icon+'</div><div class="sc-name">'+skin.name+'</div><div class="sc-sub">'+b.name+'</div>'+(owned?'<div class="sc-owned">Equipped ✓</div>':'<button class="sc-btn" onclick="buySkin('+bi+',\''+skin.id+'\','+skin.cost+')">'+skin.cost+' 💎</button>')+'</div>';
     });
   });
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00">\u2b06\ufe0f</div><div class="sc-name">10 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="buyPowerPoints()">100 \U0001fa99</button></div>';
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff">\U0001f48e</div><div class="sc-name">50 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="buyBling()">300 \U0001fa99</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00">⬆️</div><div class="sc-name">10 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="buyPowerPoints()">100 🪙</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff">💎</div><div class="sc-name">50 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="buyBling()">300 🪙</button></div>';
   h += '</div>';
   el.innerHTML = h;
 }
@@ -1869,7 +1869,7 @@ function renderQuestsPanel() {
   saveData.quests.forEach((q,i) => {
     const pct = Math.min(100,(q.progress/q.target)*100);
     const done = q.progress >= q.target;
-    h += '<div class="quest-row '+(done?'done':'')+' '+(q.claimed?'claimed':'')+'"><div class="qr-icon">'+q.icon+'</div><div class="qr-info"><div class="qr-desc">'+q.desc+'</div><div class="qr-bar"><div class="qr-fill" style="width:'+pct+'%"></div></div><div class="qr-prog">'+Math.min(q.progress,q.target)+' / '+q.target+'</div></div><div class="qr-reward">'+(q.claimed?'\u2705':done?'<button class="qr-claim" onclick="claimQuest('+i+')">'+q.reward+(q.rewardType==='coins'?' \U0001fa99':' \U0001f48e')+'</button>':q.reward+(q.rewardType==='coins'?' \U0001fa99':' \U0001f48e'))+'</div></div>';
+    h += '<div class="quest-row '+(done?'done':'')+' '+(q.claimed?'claimed':'')+'"><div class="qr-icon">'+q.icon+'</div><div class="qr-info"><div class="qr-desc">'+q.desc+'</div><div class="qr-bar"><div class="qr-fill" style="width:'+pct+'%"></div></div><div class="qr-prog">'+Math.min(q.progress,q.target)+' / '+q.target+'</div></div><div class="qr-reward">'+(q.claimed?'✅':done?'<button class="qr-claim" onclick="claimQuest('+i+')">'+q.reward+(q.rewardType==='coins'?' 🪙':' 💎')+'</button>':q.reward+(q.rewardType==='coins'?' 🪙':' 💎'))+'</div></div>';
   });
   el.innerHTML = h;
 }
@@ -1891,7 +1891,7 @@ function runLoadingScreen(){showScreen('loading-screen');const bar=document.getE
 function startMatchmaking(){const bd=saveData.brawlers[selectedBrawler];if(!bd||!bd.unlocked){alert('Select an unlocked brawler!');return}showScreen('matchmaking-screen');const tips=['Stick with your team!','Use bushes to ambush enemies','Drop gems when you die!','Use your Super wisely','Hold mouse to aim, release to fire'];document.getElementById('mm-tip').textContent=tips[Math.floor(Math.random()*tips.length)];let dots=0;const mt=document.getElementById('mm-text');const mi=setInterval(()=>{dots=(dots+1)%4;mt.textContent='Finding match'+'.'.repeat(dots)},400);const mb=document.getElementById('mm-bar-fill');let mp=0;const ml=setInterval(()=>{mp+=1+Math.random()*4;if(mp>100)mp=100;mb.style.width=mp+'%';if(mp>=100){clearInterval(ml);clearInterval(mi);mt.textContent='Match found!';setTimeout(()=>{showScreen('game-container');startGame()},600)}},60)}
 
 // Post-game
-function endGameWithRewards(){gameRunning=false;const won=blueScore>=GEMS_TO_WIN||(blueScore>redScore&&gameTime<=0);const coinR=won?30+playerKills*10:10+playerKills*5;const trophyC=won?8:-3;const ppR=Math.floor(Math.random()*5)+2;saveData.coins+=coinR;saveData.trophies=Math.max(0,saveData.trophies+trophyC);saveData.brawlers[selectedBrawler].trophies=Math.max(0,saveData.brawlers[selectedBrawler].trophies+trophyC);saveData.brawlers[selectedBrawler].powerPoints+=ppR;saveData.gamesPlayed++;saveData.quests.forEach(q=>{if(q.claimed)return;if(q.type==='kills')q.progress+=playerKills;if(q.type==='gems')q.progress+=gemsCollected;if(q.type==='wins'&&won)q.progress+=1;if(q.type==='games')q.progress+=1;if(q.type==='damage')q.progress+=playerKills*1200});saveToDisk();const r=document.getElementById('result-text');r.textContent=won?'VICTORY!':(blueScore===redScore?'DRAW!':'DEFEAT!');r.style.color=won?'#4fc3f7':(blueScore===redScore?'#ffeb3b':'#ef5350');document.getElementById('end-stats').innerHTML='<div class="stat-box"><div class="val">'+playerKills+'</div><div class="label">Kills</div></div><div class="stat-box"><div class="val">'+playerDeaths+'</div><div class="label">Deaths</div></div><div class="stat-box"><div class="val">'+gemsCollected+'</div><div class="label">Gems</div></div><div class="stat-box"><div class="val">'+blueScore+' - '+redScore+'</div><div class="label">Score</div></div>';document.getElementById('reward-summary').innerHTML='<div class="reward-item">+'+coinR+' \U0001fa99</div><div class="reward-item">'+(trophyC>0?'+':'')+trophyC+' \U0001f3c6</div><div class="reward-item">+'+ppR+' \u2b06\ufe0f</div>';showScreen('game-over')}
+function endGameWithRewards(){gameRunning=false;const won=blueScore>=GEMS_TO_WIN||(blueScore>redScore&&gameTime<=0);const coinR=won?30+playerKills*10:10+playerKills*5;const trophyC=won?8:-3;const ppR=Math.floor(Math.random()*5)+2;saveData.coins+=coinR;saveData.trophies=Math.max(0,saveData.trophies+trophyC);saveData.brawlers[selectedBrawler].trophies=Math.max(0,saveData.brawlers[selectedBrawler].trophies+trophyC);saveData.brawlers[selectedBrawler].powerPoints+=ppR;saveData.gamesPlayed++;saveData.quests.forEach(q=>{if(q.claimed)return;if(q.type==='kills')q.progress+=playerKills;if(q.type==='gems')q.progress+=gemsCollected;if(q.type==='wins'&&won)q.progress+=1;if(q.type==='games')q.progress+=1;if(q.type==='damage')q.progress+=playerKills*1200});saveToDisk();const r=document.getElementById('result-text');r.textContent=won?'VICTORY!':(blueScore===redScore?'DRAW!':'DEFEAT!');r.style.color=won?'#4fc3f7':(blueScore===redScore?'#ffeb3b':'#ef5350');document.getElementById('end-stats').innerHTML='<div class="stat-box"><div class="val">'+playerKills+'</div><div class="label">Kills</div></div><div class="stat-box"><div class="val">'+playerDeaths+'</div><div class="label">Deaths</div></div><div class="stat-box"><div class="val">'+gemsCollected+'</div><div class="label">Gems</div></div><div class="stat-box"><div class="val">'+blueScore+' - '+redScore+'</div><div class="label">Score</div></div>';document.getElementById('reward-summary').innerHTML='<div class="reward-item">+'+coinR+' 🪙</div><div class="reward-item">'+(trophyC>0?'+':'')+trophyC+' 🏆</div><div class="reward-item">+'+ppR+' ⬆️</div>';showScreen('game-over')}
 function backToMenu(){showScreen('main-menu');renderMenu()}
 
 
