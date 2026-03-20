@@ -1096,505 +1096,257 @@ function render() {
   // Entities
   entities.forEach(ent => {
     if (!ent.alive) return;
-
-    // Don't render hidden enemies unless they're very close to player
     if (ent.hidden && ent.team !== player.team) {
       const dx = ent.x - player.x, dy = ent.y - player.y;
       if (dx * dx + dy * dy > 80 * 80) return;
     }
 
-    const teamColor = ent.team === 'blue' ? '#4fc3f7' : '#ef5350';
-    const bc = ent.brawler.color;
+    // TEAM COLORS
+    const isBlue = ent.team === 'blue';
+    const tP = isBlue ? '#1e88e5' : '#e53935';
+    const tL = isBlue ? '#64b5f6' : '#ef9a9a';
+    const tD = isBlue ? '#0d47a1' : '#b71c1c';
+    const tG = isBlue ? '#42a5f5' : '#f44336';
+    const tA = isBlue ? '#bbdefb' : '#ffcdd2';
+
     const walk = ent.walkTimer || 0;
-    const legSwing = Math.sin(walk) * 0.4;
-    const armSwing = Math.sin(walk) * 0.3;
-    const bodyBob = Math.abs(Math.sin(walk * 2)) * 1.5;
-    const facingRight = Math.cos(ent.angle) >= 0;
-    const flipX = facingRight ? 1 : -1;
+    const isMoving = Math.abs(ent.vx) > 0.1 || Math.abs(ent.vy) > 0.1;
+    const lS = Math.sin(walk) * 0.5;
+    const aS = Math.sin(walk) * 0.35;
+    const bB = isMoving ? Math.abs(Math.sin(walk * 2)) * 2 : 0;
+    const fR = Math.cos(ent.angle) >= 0;
+    const fX = fR ? 1 : -1;
+    const bN = ent.brawler.name;
 
     ctx.save();
-    ctx.translate(ent.x, ent.y - bodyBob);
+    ctx.translate(ent.x, ent.y);
 
-    // Ground shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.25)';
-    ctx.beginPath();
-    ctx.ellipse(0, 22 + bodyBob, 16, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // TEAM GROUND RING - glowing
+    ctx.shadowColor = tG; ctx.shadowBlur = 14;
+    ctx.strokeStyle = tG; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(0, 22+bB, 22, 8, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = tG+'30';
+    ctx.beginPath(); ctx.ellipse(0, 22+bB, 20, 7, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = tL; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(0, 22+bB, 16, 5.5, 0, 0, Math.PI*2); ctx.stroke();
 
-    // Team indicator ring on ground
-    ctx.strokeStyle = teamColor;
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.ellipse(0, 20 + bodyBob, 18, 6, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    // === DRAW CHARACTER BASED ON BRAWLER TYPE ===
-    const bName = ent.brawler.name;
-
-    if (bName === 'Blaze') {
-      // --- BLAZE: Muscular fighter with flame hair ---
-      // Legs
-      ctx.fillStyle = '#5d4037';
-      // Left leg
-      ctx.save();
-      ctx.translate(-5, 12);
-      ctx.rotate(legSwing);
-      ctx.fillRect(-3, 0, 6, 12);
-      // Boot
-      ctx.fillStyle = '#3e2723';
-      ctx.fillRect(-4, 10, 8, 4);
-      ctx.restore();
-      // Right leg
-      ctx.save();
-      ctx.translate(5, 12);
-      ctx.rotate(-legSwing);
-      ctx.fillRect(-3, 0, 6, 12);
-      ctx.fillStyle = '#3e2723';
-      ctx.fillRect(-4, 10, 8, 4);
-      ctx.restore();
-
-      // Body (torso)
-      ctx.fillStyle = '#d84315';
-      ctx.beginPath();
-      ctx.roundRect(-10, -4, 20, 18, 4);
-      ctx.fill();
-      // Belt
-      ctx.fillStyle = '#4e342e';
-      ctx.fillRect(-10, 10, 20, 4);
-
-      // Arms
-      ctx.fillStyle = '#ff7043';
-      // Back arm
-      ctx.save();
-      ctx.translate(-10 * flipX, 0);
-      ctx.rotate(-armSwing * flipX);
-      ctx.fillRect(-3, -2, 6, 14);
-      // Fist
-      ctx.fillStyle = '#ffab91';
-      ctx.beginPath();
-      ctx.arc(0, 14, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      // Front arm (holding weapon towards aim)
-      ctx.save();
-      ctx.translate(10 * flipX, 0);
-      ctx.rotate(ent.angle - (facingRight ? 0 : Math.PI));
-      ctx.fillStyle = '#ff7043';
-      ctx.fillRect(-3, -2, 6, 16);
-      // Flamethrower weapon
-      ctx.fillStyle = '#616161';
-      ctx.fillRect(-4, 12, 8, 10);
-      ctx.fillStyle = '#ff6d00';
-      ctx.beginPath();
-      ctx.arc(0, 24, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // Head
-      ctx.fillStyle = '#ffab91';
-      ctx.beginPath();
-      ctx.arc(0, -10, 10, 0, Math.PI * 2);
-      ctx.fill();
-      // Flame hair
-      for (let i = 0; i < 5; i++) {
-        const hx = -6 + i * 3;
-        const flicker = Math.sin(Date.now() / 100 + i) * 2;
-        ctx.fillStyle = i % 2 === 0 ? '#ff6d00' : '#ffab00';
-        ctx.beginPath();
-        ctx.moveTo(hx - 2, -18);
-        ctx.lineTo(hx, -26 - flicker);
-        ctx.lineTo(hx + 2, -18);
-        ctx.closePath();
-        ctx.fill();
-      }
-      // Eyes
+    // Player arrow
+    if (ent.isPlayer) {
       ctx.fillStyle = '#fff';
-      ctx.fillRect(-5 * flipX - 2, -12, 4, 4);
-      ctx.fillRect(2 * flipX - 2, -12, 4, 4);
-      ctx.fillStyle = '#212121';
-      ctx.fillRect(-5 * flipX - 1, -11, 2, 3);
-      ctx.fillRect(2 * flipX - 1, -11, 2, 3);
-      // Angry brow
-      ctx.strokeStyle = '#5d4037';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-7, -15);
-      ctx.lineTo(-3, -14);
-      ctx.moveTo(3, -14);
-      ctx.lineTo(7, -15);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-52); ctx.lineTo(-6,-44); ctx.lineTo(6,-44); ctx.closePath(); ctx.fill();
+    }
 
-    } else if (bName === 'Frostbite') {
-      // --- FROSTBITE: Slim sniper with ice hood ---
-      // Legs
-      ctx.fillStyle = '#1565c0';
-      ctx.save();
-      ctx.translate(-4, 12);
-      ctx.rotate(legSwing);
-      ctx.fillRect(-2, 0, 5, 13);
-      ctx.fillStyle = '#0d47a1';
-      ctx.fillRect(-3, 11, 7, 3);
-      ctx.restore();
-      ctx.save();
-      ctx.translate(4, 12);
-      ctx.rotate(-legSwing);
-      ctx.fillStyle = '#1565c0';
-      ctx.fillRect(-2, 0, 5, 13);
-      ctx.fillStyle = '#0d47a1';
-      ctx.fillRect(-3, 11, 7, 3);
-      ctx.restore();
+    ctx.translate(0, -bB);
 
-      // Body (slim coat)
-      ctx.fillStyle = '#1e88e5';
-      ctx.beginPath();
-      ctx.roundRect(-8, -4, 16, 18, 3);
-      ctx.fill();
-      // Coat details
-      ctx.strokeStyle = '#90caf9';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, -2);
-      ctx.lineTo(0, 14);
-      ctx.stroke();
-
-      // Arms
-      ctx.fillStyle = '#1e88e5';
-      ctx.save();
-      ctx.translate(-8 * flipX, 0);
-      ctx.rotate(-armSwing * flipX * 0.5);
-      ctx.fillRect(-2, -1, 5, 12);
-      ctx.fillStyle = '#bbdefb';
-      ctx.beginPath();
-      ctx.arc(0, 13, 3, 0, Math.PI * 2);
-      ctx.fill();
+    // Helper: draw a limb
+    function limb(x,y,rot,w,h,col,bootCol) {
+      ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.roundRect(-w/2,0,w,h,2); ctx.fill();
+      if (bootCol) { ctx.fillStyle = bootCol; ctx.beginPath(); ctx.roundRect(-w/2-1,h-4,w+2,5,[0,0,3,3]); ctx.fill(); }
       ctx.restore();
-      // Sniper arm
-      ctx.save();
-      ctx.translate(8 * flipX, 0);
-      ctx.rotate(ent.angle - (facingRight ? 0 : Math.PI));
-      ctx.fillStyle = '#1e88e5';
-      ctx.fillRect(-2, -1, 5, 12);
-      // Sniper rifle
-      ctx.fillStyle = '#455a64';
-      ctx.fillRect(-2, 10, 4, 20);
-      ctx.fillStyle = '#4fc3f7';
-      ctx.fillRect(-1, 28, 2, 4);
-      // Scope
-      ctx.fillStyle = '#80deea';
-      ctx.beginPath();
-      ctx.arc(0, 16, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+    }
 
-      // Head with hood
-      ctx.fillStyle = '#bbdefb';
-      ctx.beginPath();
-      ctx.arc(0, -10, 9, 0, Math.PI * 2);
-      ctx.fill();
-      // Hood
-      ctx.fillStyle = '#1565c0';
-      ctx.beginPath();
-      ctx.arc(0, -12, 11, Math.PI, Math.PI * 2);
-      ctx.fill();
-      ctx.fillRect(-11, -12, 22, 4);
-      // Face
-      ctx.fillStyle = '#e3f2fd';
-      ctx.beginPath();
-      ctx.arc(0, -8, 6, 0, Math.PI, false);
-      ctx.fill();
-      // Glowing eyes
-      ctx.fillStyle = '#00e5ff';
-      ctx.shadowColor = '#00e5ff';
-      ctx.shadowBlur = 6;
-      ctx.beginPath();
-      ctx.arc(-3 * flipX, -10, 2, 0, Math.PI * 2);
-      ctx.arc(3 * flipX, -10, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+    // Helper: draw 3D head
+    function head3D(radius, skinCol, highlightCol) {
+      ctx.fillStyle = skinCol;
+      ctx.beginPath(); ctx.arc(0,-12,radius,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = highlightCol;
+      ctx.beginPath(); ctx.arc(-3,-15,radius*0.4,0,Math.PI*2); ctx.fill();
+    }
 
-    } else if (bName === 'Tank') {
-      // --- TANK: Big heavy brawler with armor ---
-      // Legs (thick)
-      ctx.fillStyle = '#2e7d32';
-      ctx.save();
-      ctx.translate(-7, 10);
-      ctx.rotate(legSwing * 0.6);
-      ctx.fillRect(-5, 0, 10, 14);
-      ctx.fillStyle = '#1b5e20';
-      ctx.fillRect(-6, 12, 12, 5);
-      ctx.restore();
-      ctx.save();
-      ctx.translate(7, 10);
-      ctx.rotate(-legSwing * 0.6);
-      ctx.fillStyle = '#2e7d32';
-      ctx.fillRect(-5, 0, 10, 14);
-      ctx.fillStyle = '#1b5e20';
-      ctx.fillRect(-6, 12, 12, 5);
-      ctx.restore();
+    // Helper: team banner
+    function teamBanner() {
+      ctx.fillStyle = tG; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.roundRect(-14,-48,28,10,3); ctx.fill();
+      ctx.globalAlpha = 1; ctx.fillStyle = '#fff';
+      ctx.font = 'bold 8px "Exo 2"'; ctx.textAlign = 'center';
+      ctx.fillText(isBlue ? 'BLUE' : 'RED', 0, -40);
+    }
 
-      // Body (big armored torso)
-      ctx.fillStyle = '#388e3c';
-      ctx.beginPath();
-      ctx.roundRect(-14, -6, 28, 20, 5);
-      ctx.fill();
-      // Armor plate
-      ctx.fillStyle = '#4caf50';
-      ctx.beginPath();
-      ctx.roundRect(-10, -4, 20, 14, 3);
-      ctx.fill();
-      // Armor cross
-      ctx.strokeStyle = '#81c784';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, -2);
-      ctx.lineTo(0, 10);
-      ctx.moveTo(-6, 4);
-      ctx.lineTo(6, 4);
-      ctx.stroke();
+    if (bN === 'Blaze') {
+      // LEGS
+      limb(-6,10,lS,8,14,tP,'#37474f');
+      limb(6,10,-lS,8,14,tP,'#37474f');
+      // BODY
+      ctx.fillStyle = tD; ctx.beginPath(); ctx.roundRect(-13,-6,26,20,4); ctx.fill();
+      ctx.fillStyle = tP; ctx.beginPath(); ctx.roundRect(-12,-5,24,18,3); ctx.fill();
+      ctx.fillStyle = tL; ctx.beginPath(); ctx.roundRect(-8,-3,16,12,2); ctx.fill();
+      ctx.fillStyle = tP; ctx.beginPath(); ctx.roundRect(-7,-2,14,10,2); ctx.fill();
+      // Flame emblem
+      ctx.fillStyle = '#ff6d00'; ctx.beginPath(); ctx.moveTo(0,-1); ctx.lineTo(-4,6); ctx.quadraticCurveTo(0,4,4,6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffab00'; ctx.beginPath(); ctx.moveTo(0,1); ctx.lineTo(-2,5); ctx.quadraticCurveTo(0,4,2,5); ctx.closePath(); ctx.fill();
       // Belt
-      ctx.fillStyle = '#5d4037';
-      ctx.fillRect(-14, 10, 28, 4);
-
-      // Arms (thick)
-      ctx.fillStyle = '#388e3c';
-      ctx.save();
-      ctx.translate(-14 * flipX, -2);
-      ctx.rotate(-armSwing * flipX * 0.4);
-      ctx.fillRect(-5, 0, 10, 14);
-      // Armored glove
-      ctx.fillStyle = '#2e7d32';
-      ctx.beginPath();
-      ctx.arc(0, 16, 5, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillStyle = '#5d4037'; ctx.fillRect(-13,10,26,4);
+      ctx.fillStyle = '#ffab00'; ctx.beginPath(); ctx.arc(0,12,3,0,Math.PI*2); ctx.fill();
+      // Back arm
+      ctx.save(); ctx.translate(-12*fX,-2); ctx.rotate(-aS*fX);
+      ctx.fillStyle = tP; ctx.beginPath(); ctx.roundRect(-4,0,8,14,3); ctx.fill();
+      ctx.fillStyle = '#ffcc80'; ctx.beginPath(); ctx.arc(0,15,4,0,Math.PI*2); ctx.fill();
       ctx.restore();
       // Weapon arm
-      ctx.save();
-      ctx.translate(14 * flipX, -2);
-      ctx.rotate(ent.angle - (facingRight ? 0 : Math.PI));
-      ctx.fillStyle = '#388e3c';
-      ctx.fillRect(-5, 0, 10, 12);
-      // Shotgun
-      ctx.fillStyle = '#5d4037';
-      ctx.fillRect(-4, 10, 8, 8);
-      ctx.fillStyle = '#424242';
-      ctx.fillRect(-2, 16, 4, 8);
-      ctx.fillRect(-3, 22, 6, 3);
+      ctx.save(); ctx.translate(12*fX,-2); ctx.rotate(ent.angle-(fR?0:Math.PI));
+      ctx.fillStyle = tP; ctx.beginPath(); ctx.roundRect(-3.5,0,7,13,2); ctx.fill();
+      ctx.fillStyle = '#616161'; ctx.beginPath(); ctx.roundRect(-5,11,10,14,2); ctx.fill();
+      ctx.fillStyle = '#757575'; ctx.beginPath(); ctx.roundRect(-4,12,8,12,2); ctx.fill();
+      var fl = Math.sin(Date.now()/60)*2;
+      ctx.fillStyle = '#ff6d00'; ctx.beginPath(); ctx.arc(0,27+fl,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#ffab00'; ctx.beginPath(); ctx.arc(0,27+fl,2,0,Math.PI*2); ctx.fill();
       ctx.restore();
+      // HEAD
+      head3D(11,'#ffcc80','#ffe0b2');
+      ctx.fillStyle = tP; ctx.beginPath(); ctx.ellipse(0,-18,12,5,0,0,Math.PI*2); ctx.fill();
+      // Flame hair
+      for (var i=0;i<5;i++) { var hx=-6+i*3, fk=Math.sin(Date.now()/80+i*1.2)*3;
+        ctx.fillStyle=i%2===0?'#ff6d00':'#ffab00'; ctx.beginPath(); ctx.moveTo(hx-3,-22); ctx.lineTo(hx,-30-fk); ctx.lineTo(hx+3,-22); ctx.closePath(); ctx.fill(); }
+      // Face
+      ctx.fillStyle='#fff'; ctx.fillRect(-6*fX-2,-14,4,4); ctx.fillRect(1*fX-2,-14,4,4);
+      ctx.fillStyle='#212121'; ctx.fillRect(-6*fX-1,-13,2,3); ctx.fillRect(1*fX-1,-13,2,3);
+      ctx.strokeStyle='#5d4037'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,-7,3,0,Math.PI); ctx.stroke();
+      teamBanner();
 
-      // Head (with helmet)
-      ctx.fillStyle = '#a5d6a7';
-      ctx.beginPath();
-      ctx.arc(0, -12, 12, 0, Math.PI * 2);
-      ctx.fill();
-      // Helmet
-      ctx.fillStyle = '#2e7d32';
-      ctx.beginPath();
-      ctx.arc(0, -14, 13, Math.PI, Math.PI * 2);
-      ctx.fill();
-      ctx.fillRect(-13, -14, 26, 5);
-      // Visor
-      ctx.fillStyle = '#c8e6c9';
-      ctx.fillRect(-8, -12, 16, 5);
-      // Eyes behind visor
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(-5, -11, 4, 3);
-      ctx.fillRect(1, -11, 4, 3);
-      ctx.fillStyle = '#212121';
-      ctx.fillRect(-4, -10, 2, 2);
-      ctx.fillRect(2, -10, 2, 2);
-      // Chin guard
-      ctx.fillStyle = '#2e7d32';
-      ctx.beginPath();
-      ctx.arc(0, -6, 8, 0, Math.PI);
-      ctx.fill();
-
-    } else if (bName === 'Phantom') {
-      // --- PHANTOM: Sleek assassin with cloak ---
-      // Legs (thin, dark)
-      ctx.fillStyle = '#4a148c';
-      ctx.save();
-      ctx.translate(-4, 12);
-      ctx.rotate(legSwing * 1.2);
-      ctx.fillRect(-2, 0, 4, 13);
-      ctx.fillStyle = '#311b92';
-      ctx.fillRect(-3, 11, 6, 3);
+    } else if (bN === 'Frostbite') {
+      // LEGS
+      limb(-5,10,lS,6,14,tP,'#263238');
+      limb(5,10,-lS,6,14,tP,'#263238');
+      // BODY
+      ctx.fillStyle = tD; ctx.beginPath(); ctx.roundRect(-10,-5,20,18,3); ctx.fill();
+      ctx.fillStyle = tP; ctx.beginPath(); ctx.roundRect(-9,-4,18,16,3); ctx.fill();
+      ctx.strokeStyle = tL; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0,-2); ctx.lineTo(0,12); ctx.stroke();
+      // Ice emblem
+      ctx.strokeStyle='#e1f5fe'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,6); ctx.moveTo(-3,3); ctx.lineTo(3,3); ctx.stroke();
+      // Back arm
+      ctx.save(); ctx.translate(-9*fX,-1); ctx.rotate(-aS*fX*0.5);
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-2.5,0,5,12,2); ctx.fill();
+      ctx.fillStyle=tA; ctx.beginPath(); ctx.arc(0,13,3,0,Math.PI*2); ctx.fill();
       ctx.restore();
-      ctx.save();
-      ctx.translate(4, 12);
-      ctx.rotate(-legSwing * 1.2);
-      ctx.fillStyle = '#4a148c';
-      ctx.fillRect(-2, 0, 4, 13);
-      ctx.fillStyle = '#311b92';
-      ctx.fillRect(-3, 11, 6, 3);
+      // Sniper arm
+      ctx.save(); ctx.translate(9*fX,-1); ctx.rotate(ent.angle-(fR?0:Math.PI));
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-2.5,0,5,12,2); ctx.fill();
+      ctx.fillStyle='#37474f'; ctx.beginPath(); ctx.roundRect(-3,10,6,22,1); ctx.fill();
+      ctx.fillStyle='#546e7a'; ctx.beginPath(); ctx.roundRect(-2,11,4,20,1); ctx.fill();
+      ctx.fillStyle='#00e5ff'; ctx.shadowColor='#00e5ff'; ctx.shadowBlur=4;
+      ctx.beginPath(); ctx.arc(0,16,2.5,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle='#80deea'; ctx.beginPath(); ctx.arc(0,33,2,0,Math.PI*2); ctx.fill();
       ctx.restore();
-
-      // Cloak/body
-      ctx.fillStyle = '#6a1b9a';
-      ctx.beginPath();
-      ctx.moveTo(-10, -4);
-      ctx.lineTo(-12, 16);
-      ctx.lineTo(12, 16);
-      ctx.lineTo(10, -4);
-      ctx.closePath();
-      ctx.fill();
-      // Inner cloak
-      ctx.fillStyle = '#8e24aa';
-      ctx.beginPath();
-      ctx.roundRect(-7, -2, 14, 14, 2);
-      ctx.fill();
-      // Cloak clasp
-      ctx.fillStyle = '#e1bee7';
-      ctx.beginPath();
-      ctx.arc(0, -2, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Arms
-      ctx.fillStyle = '#6a1b9a';
-      ctx.save();
-      ctx.translate(-10 * flipX, 0);
-      ctx.rotate(-armSwing * flipX * 0.8);
-      ctx.fillRect(-2, -1, 4, 12);
-      // Shadow blade
-      ctx.fillStyle = '#9c27b0';
-      ctx.beginPath();
-      ctx.moveTo(0, 10);
-      ctx.lineTo(-3, 20);
-      ctx.lineTo(0, 18);
-      ctx.lineTo(3, 20);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-      // Main weapon arm
-      ctx.save();
-      ctx.translate(10 * flipX, 0);
-      ctx.rotate(ent.angle - (facingRight ? 0 : Math.PI));
-      ctx.fillStyle = '#6a1b9a';
-      ctx.fillRect(-2, -1, 4, 12);
-      // Shadow dagger
-      ctx.fillStyle = '#ce93d8';
-      ctx.shadowColor = '#ce93d8';
-      ctx.shadowBlur = 4;
-      ctx.beginPath();
-      ctx.moveTo(0, 10);
-      ctx.lineTo(-2, 22);
-      ctx.lineTo(0, 20);
-      ctx.lineTo(2, 22);
-      ctx.closePath();
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.restore();
-
-      // Head (hooded, mysterious)
-      ctx.fillStyle = '#4a148c';
-      ctx.beginPath();
-      ctx.arc(0, -10, 10, 0, Math.PI * 2);
-      ctx.fill();
+      // HEAD
+      head3D(10,'#b3e5fc','#e1f5fe');
       // Hood
-      ctx.fillStyle = '#38006b';
-      ctx.beginPath();
-      ctx.moveTo(-12, -8);
-      ctx.quadraticCurveTo(0, -28, 12, -8);
-      ctx.lineTo(10, -4);
-      ctx.lineTo(-10, -4);
-      ctx.closePath();
-      ctx.fill();
-      // Glowing eyes
-      ctx.fillStyle = '#ea80fc';
-      ctx.shadowColor = '#ea80fc';
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(-3 * flipX, -9, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(3 * flipX, -9, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      // Ghost trail effect when moving
-      const isMoving = Math.abs(ent.vx) > 0.1 || Math.abs(ent.vy) > 0.1;
-      if (isMoving) {
-        ctx.globalAlpha = 0.15;
-        ctx.fillStyle = '#ab47bc';
-        ctx.beginPath();
-        ctx.moveTo(-12, 16);
-        ctx.quadraticCurveTo(-8 - Math.sin(walk) * 6, 30, 0, 24);
-        ctx.quadraticCurveTo(8 + Math.sin(walk) * 6, 30, 12, 16);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.moveTo(-13,-8); ctx.quadraticCurveTo(0,-28,13,-8); ctx.lineTo(11,-4); ctx.lineTo(-11,-4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=tD; ctx.beginPath(); ctx.moveTo(-12,-8); ctx.quadraticCurveTo(0,-26,12,-8); ctx.lineTo(11,-6); ctx.lineTo(-11,-6); ctx.closePath(); ctx.fill();
+      // Eyes
+      ctx.fillStyle='#00e5ff'; ctx.shadowColor='#00e5ff'; ctx.shadowBlur=10;
+      ctx.beginPath(); ctx.ellipse(-3*fX,-10,2.5,2,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(3*fX,-10,2.5,2,0,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      if (isMoving) { for(var i=0;i<3;i++) { var px=Math.sin(Date.now()/300+i*2)*14, py=Math.cos(Date.now()/400+i*3)*8-14;
+        ctx.fillStyle='rgba(128,222,234,0.4)'; ctx.beginPath(); ctx.arc(px,py,1.5,0,Math.PI*2); ctx.fill(); }}
+      teamBanner();
+
+    } else if (bN === 'Tank') {
+      // LEGS
+      limb(-8,8,lS*0.6,12,16,tP,'#3e2723');
+      limb(8,8,-lS*0.6,12,16,tP,'#3e2723');
+      // BODY
+      ctx.fillStyle=tD; ctx.beginPath(); ctx.roundRect(-17,-8,34,22,5); ctx.fill();
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-16,-7,32,20,4); ctx.fill();
+      ctx.fillStyle=tL; ctx.beginPath(); ctx.roundRect(-12,-5,24,16,3); ctx.fill();
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-10,-3,20,12,2); ctx.fill();
+      // Cross
+      ctx.strokeStyle=tA; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(0,-1); ctx.lineTo(0,9); ctx.moveTo(-6,4); ctx.lineTo(6,4); ctx.stroke();
+      // Shoulders
+      [-1,1].forEach(function(s){ctx.fillStyle=tD;ctx.beginPath();ctx.ellipse(s*17,-3,7,9,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=tP;ctx.beginPath();ctx.ellipse(s*17,-4,6,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=tL;ctx.beginPath();ctx.ellipse(s*17,-6,4,5,0,0,Math.PI*2);ctx.fill();});
+      // Belt
+      ctx.fillStyle='#4e342e'; ctx.fillRect(-17,10,34,5);
+      // Back arm
+      ctx.save(); ctx.translate(-16*fX,-4); ctx.rotate(-aS*fX*0.4);
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-5,0,10,16,3); ctx.fill();
+      ctx.fillStyle='#757575'; ctx.beginPath(); ctx.arc(0,18,6,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+      // Weapon arm
+      ctx.save(); ctx.translate(16*fX,-4); ctx.rotate(ent.angle-(fR?0:Math.PI));
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-5,0,10,14,3); ctx.fill();
+      ctx.fillStyle='#4e342e'; ctx.beginPath(); ctx.roundRect(-5,12,10,10,2); ctx.fill();
+      ctx.fillStyle='#424242'; ctx.beginPath(); ctx.roundRect(-3,20,6,10,1); ctx.fill();
+      ctx.fillStyle='#212121'; ctx.beginPath(); ctx.arc(0,31,3,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+      // HEAD
+      head3D(13,'#a5d6a7','#c8e6c9');
+      // Helmet
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.arc(0,-16,14,Math.PI,Math.PI*2); ctx.fill(); ctx.fillRect(-14,-16,28,6);
+      ctx.fillStyle=tD; ctx.beginPath(); ctx.arc(0,-16,13,Math.PI,Math.PI*2); ctx.fill(); ctx.fillRect(-13,-16,26,4);
+      // Visor
+      ctx.fillStyle=tA; ctx.beginPath(); ctx.roundRect(-9,-14,18,6,2); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillRect(-6,-13,5,4); ctx.fillRect(1,-13,5,4);
+      ctx.fillStyle='#212121'; ctx.fillRect(-5,-12,3,3); ctx.fillRect(2,-12,3,3);
+      ctx.fillStyle=tD; ctx.beginPath(); ctx.roundRect(-7,-6,14,4,2); ctx.fill();
+      teamBanner();
+
+    } else if (bN === 'Phantom') {
+      // LEGS
+      limb(-4,12,lS*1.3,5,14,tP,'#1a1a2e');
+      limb(4,12,-lS*1.3,5,14,tP,'#1a1a2e');
+      // CLOAK
+      var cS=Math.sin(Date.now()/300)*2;
+      ctx.fillStyle=tD; ctx.beginPath(); ctx.moveTo(-12,-4); ctx.lineTo(-14+cS,18); ctx.quadraticCurveTo(0,22,14-cS,18); ctx.lineTo(12,-4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.moveTo(-10,-3); ctx.lineTo(-12+cS,16); ctx.quadraticCurveTo(0,20,12-cS,16); ctx.lineTo(10,-3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=tL+'80'; ctx.beginPath(); ctx.roundRect(-6,-1,12,12,2); ctx.fill();
+      // Clasp
+      ctx.fillStyle=tA; ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(-3,0); ctx.lineTo(0,3); ctx.lineTo(3,0); ctx.closePath(); ctx.fill();
+      // Back arm + dagger
+      ctx.save(); ctx.translate(-10*fX,0); ctx.rotate(-aS*fX);
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-2,0,4,12,2); ctx.fill();
+      ctx.fillStyle='#b0bec5'; ctx.beginPath(); ctx.moveTo(0,11); ctx.lineTo(-2,22); ctx.lineTo(0,20); ctx.lineTo(2,22); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      // Weapon arm + glowing dagger
+      ctx.save(); ctx.translate(10*fX,0); ctx.rotate(ent.angle-(fR?0:Math.PI));
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.roundRect(-2,0,4,12,2); ctx.fill();
+      ctx.fillStyle=tA; ctx.shadowColor=tG; ctx.shadowBlur=6;
+      ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(-3,24); ctx.lineTo(0,22); ctx.lineTo(3,24); ctx.closePath(); ctx.fill();
+      ctx.shadowBlur=0; ctx.restore();
+      // HEAD
+      ctx.fillStyle='#37474f'; ctx.beginPath(); ctx.arc(0,-10,9,0,Math.PI*2); ctx.fill();
+      // Hood
+      ctx.fillStyle=tP; ctx.beginPath(); ctx.moveTo(-13,-7); ctx.quadraticCurveTo(0,-30,13,-7); ctx.lineTo(10,-3); ctx.lineTo(-10,-3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle=tD; ctx.beginPath(); ctx.moveTo(-12,-7); ctx.quadraticCurveTo(0,-28,12,-7); ctx.lineTo(10,-5); ctx.lineTo(-10,-5); ctx.closePath(); ctx.fill();
+      // Mask
+      ctx.fillStyle='#263238'; ctx.beginPath(); ctx.roundRect(-7,-8,14,6,2); ctx.fill();
+      // Eyes
+      ctx.fillStyle=tA; ctx.shadowColor=tG; ctx.shadowBlur=10;
+      ctx.beginPath(); ctx.ellipse(-3*fX,-9,2.5,1.5,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(3*fX,-9,2.5,1.5,0,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+      // Ghost trail
+      if (isMoving) { ctx.globalAlpha=0.12; ctx.fillStyle=tG;
+        ctx.beginPath(); ctx.moveTo(-14,18); ctx.quadraticCurveTo(-10+Math.sin(walk)*8,34,0,28); ctx.quadraticCurveTo(10-Math.sin(walk)*8,34,14,18); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1; }
+      teamBanner();
     }
 
-    // === SHIELD EFFECT (all brawlers) ===
-    if (ent.shielded) {
-      ctx.strokeStyle = 'rgba(102, 187, 106, 0.5)';
-      ctx.lineWidth = 3;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.ellipse(0, 2, 22, 28, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      // Shield shimmer
-      ctx.fillStyle = 'rgba(102, 187, 106, 0.1)';
-      ctx.beginPath();
-      ctx.ellipse(0, 2, 20, 26, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // === STUN STARS ===
-    if (ent.stunTimer > 0) {
-      for (let i = 0; i < 3; i++) {
-        const a = Date.now() / 200 + (Math.PI * 2 / 3) * i;
-        ctx.fillStyle = '#ffeb3b';
-        ctx.font = 'bold 12px serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('\u2605', Math.cos(a) * 20, -26 + Math.sin(a) * 5);
-      }
-    }
+    // SHIELD
+    if (ent.shielded) { ctx.strokeStyle='rgba(102,187,106,0.5)'; ctx.lineWidth=3; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.ellipse(0,2,22,28,0,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='rgba(102,187,106,0.1)'; ctx.beginPath(); ctx.ellipse(0,2,20,26,0,0,Math.PI*2); ctx.fill(); }
+    // STUN
+    if (ent.stunTimer > 0) { for(var i=0;i<3;i++) { var a=Date.now()/200+(Math.PI*2/3)*i;
+      ctx.fillStyle='#ffeb3b'; ctx.font='bold 12px serif'; ctx.textAlign='center';
+      ctx.fillText('\u2605',Math.cos(a)*20,-26+Math.sin(a)*5); }}
 
     ctx.restore();
 
-    // === HP BAR (drawn in world space, not rotated) ===
-    const hpW = 40;
-    const hpH = 5;
-    const hpX = ent.x - hpW / 2;
-    const hpY = ent.y - 38;
-    // BG
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.beginPath();
-    ctx.roundRect(hpX - 1, hpY - 1, hpW + 2, hpH + 2, 3);
-    ctx.fill();
-    // Fill
-    const hpPct = ent.hp / ent.maxHp;
-    ctx.fillStyle = hpPct > 0.5 ? '#66bb6a' : hpPct > 0.25 ? '#ffa726' : '#ef5350';
-    ctx.beginPath();
-    ctx.roundRect(hpX, hpY, hpW * hpPct, hpH, 2);
-    ctx.fill();
-
-    // Gem count
-    if (ent.gems > 0) {
-      ctx.fillStyle = '#ce93d8';
-      ctx.font = 'bold 12px "Exo 2"';
-      ctx.textAlign = 'center';
-      ctx.fillText('\uD83D\uDC8E' + ent.gems, ent.x, ent.y - 44);
-    }
-
-    // Name tag
-    if (ent.isPlayer) {
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 11px "Exo 2"';
-      ctx.textAlign = 'center';
-      ctx.fillText('YOU', ent.x, ent.y + 34);
-    }
-
-    // Brawler name for bots
-    if (!ent.isPlayer) {
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.font = '9px "Exo 2"';
-      ctx.textAlign = 'center';
-      ctx.fillText(ent.brawler.name, ent.x, ent.y + 34);
-    }
+    // HP BAR
+    var hpW=42,hpH=5,hpX=ent.x-hpW/2,hpY=ent.y-56;
+    ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.beginPath(); ctx.roundRect(hpX-1,hpY-1,hpW+2,hpH+2,3); ctx.fill();
+    var hpPct=ent.hp/ent.maxHp;
+    ctx.fillStyle=hpPct>0.5?'#66bb6a':hpPct>0.25?'#ffa726':'#ef5350';
+    ctx.beginPath(); ctx.roundRect(hpX,hpY,hpW*hpPct,hpH,2); ctx.fill();
+    // Gems
+    if (ent.gems>0) { ctx.fillStyle='#ce93d8'; ctx.font='bold 11px "Exo 2"'; ctx.textAlign='center'; ctx.fillText('\uD83D\uDC8E'+ent.gems,ent.x,ent.y-62); }
+    // Name
+    ctx.textAlign='center';
+    if (ent.isPlayer) { ctx.fillStyle='#fff'; ctx.font='bold 11px "Exo 2"'; ctx.fillText('YOU',ent.x,ent.y+40); }
+    else { ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font='9px "Exo 2"'; ctx.fillText(ent.brawler.name,ent.x,ent.y+40); }
   });
 
   // Projectiles
