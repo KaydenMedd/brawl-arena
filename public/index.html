@@ -438,6 +438,15 @@ let walls = [];
 let bushes = [];
 let player = null;
 let gemSpawnTimer = 0;
+let killFeed = []; // top-right, visible to all
+let personalKillFeed = []; // bottom-center, only your kills
+
+// Random bot names
+const BOT_NAMES_FIRST = ['Shadow','Storm','Blitz','Viper','Frost','Nova','Razor','Titan','Ember','Bolt','Apex','Ghost','Fang','Neon','Drift','Rogue','Havoc','Jinx','Onyx','Pulse'];
+const BOT_NAMES_SECOND = ['Wolf','Hawk','Bear','Fox','Lion','Shark','Dragon','Cobra','Puma','Raptor','Raven','Mantis','Tiger','Falcon','Lynx','Badger','Venom','Strike','Fury','Blaze'];
+function randomBotName() {
+  return BOT_NAMES_FIRST[Math.floor(Math.random()*BOT_NAMES_FIRST.length)] + BOT_NAMES_SECOND[Math.floor(Math.random()*BOT_NAMES_SECOND.length)];
+}
 
 function resize() {
   W = window.innerWidth;
@@ -498,6 +507,7 @@ function createEntity(brawlerIdx, x, y, team, isPlayer = false) {
     maxHp: b.hp,
     team,
     isPlayer,
+    playerName: isPlayer ? 'YOU' : randomBotName(),
     alive: true,
     respawnTimer: 0,
     angle: 0,
@@ -707,6 +717,29 @@ function killEntity(ent, killer) {
 
   if (ent.isPlayer) playerDeaths++;
   if (killer && killer.isPlayer) playerKills++;
+
+  // Kill feed entry (top-right, everyone sees)
+  const killerName = killer ? killer.playerName : '???';
+  const victimName = ent.playerName;
+  const killerTeam = killer ? killer.team : 'red';
+  killFeed.push({
+    killer: killerName,
+    victim: victimName,
+    killerTeam: killerTeam,
+    victimTeam: ent.team,
+    timer: 4
+  });
+  if (killFeed.length > 5) killFeed.shift();
+
+  // Personal kill notification (bottom-center, only the killer sees)
+  if (killer && killer.isPlayer) {
+    personalKillFeed.push({
+      victim: victimName,
+      brawler: ent.brawler.name,
+      timer: 2.5
+    });
+    if (personalKillFeed.length > 3) personalKillFeed.shift();
+  }
 
   spawnEffect(ent.x, ent.y, 'death', ent.team === 'blue' ? '#4fc3f7' : '#ef5350', 0.6);
 }
@@ -987,6 +1020,16 @@ function update(dt) {
     if (effects[i].timer <= 0) effects.splice(i, 1);
   }
 
+  // Update kill feeds
+  for (let i = killFeed.length - 1; i >= 0; i--) {
+    killFeed[i].timer -= dt;
+    if (killFeed[i].timer <= 0) killFeed.splice(i, 1);
+  }
+  for (let i = personalKillFeed.length - 1; i >= 0; i--) {
+    personalKillFeed[i].timer -= dt;
+    if (personalKillFeed[i].timer <= 0) personalKillFeed.splice(i, 1);
+  }
+
   // Camera follow player
   if (player && player.alive) {
     camera.x += (player.x - W / 2 - camera.x) * 0.1;
@@ -1158,11 +1201,13 @@ function render() {
 
     // Helper: team banner
     function teamBanner() {
-      ctx.fillStyle = tG; ctx.globalAlpha = 0.9;
-      ctx.beginPath(); ctx.roundRect(-14,-48,28,10,3); ctx.fill();
-      ctx.globalAlpha = 1; ctx.fillStyle = '#fff';
+      var nameText = ent.playerName;
       ctx.font = 'bold 8px "Exo 2"'; ctx.textAlign = 'center';
-      ctx.fillText(isBlue ? 'BLUE' : 'RED', 0, -40);
+      var tw = ctx.measureText(nameText).width + 12;
+      ctx.fillStyle = tG; ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.roundRect(-tw/2,-48,tw,12,4); ctx.fill();
+      ctx.globalAlpha = 1; ctx.fillStyle = '#fff';
+      ctx.fillText(nameText, 0, -39);
     }
 
     if (bN === 'Blaze') {
@@ -1346,7 +1391,7 @@ function render() {
     // Name
     ctx.textAlign='center';
     if (ent.isPlayer) { ctx.fillStyle='#fff'; ctx.font='bold 11px "Exo 2"'; ctx.fillText('YOU',ent.x,ent.y+40); }
-    else { ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font='9px "Exo 2"'; ctx.fillText(ent.brawler.name,ent.x,ent.y+40); }
+    else { ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='bold 9px "Exo 2"'; ctx.fillText(ent.playerName,ent.x,ent.y+40); }
   });
 
   // Projectiles
@@ -1533,6 +1578,87 @@ function render() {
 
   // Minimap
   drawMinimap();
+
+  // === KILL FEED (top-right corner, all kills) ===
+  ctx.save();
+  killFeed.forEach((kf, i) => {
+    const y = 50 + i * 28;
+    const alpha = Math.min(1, kf.timer / 0.5);
+    ctx.globalAlpha = alpha;
+
+    // Background pill
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.beginPath();
+    ctx.roundRect(W - 280, y - 10, 270, 24, 6);
+    ctx.fill();
+
+    ctx.font = 'bold 12px "Exo 2"';
+    ctx.textAlign = 'right';
+
+    // Killer name in their team color
+    const kCol = kf.killerTeam === 'blue' ? '#64b5f6' : '#ef9a9a';
+    const vCol = kf.victimTeam === 'blue' ? '#64b5f6' : '#ef9a9a';
+
+    ctx.textAlign = 'left';
+    const startX = W - 270;
+    ctx.fillStyle = kCol;
+    ctx.fillText(kf.killer, startX, y + 4);
+
+    const kWidth = ctx.measureText(kf.killer).width;
+    ctx.fillStyle = '#888';
+    ctx.font = '11px "Exo 2"';
+    ctx.fillText(' eliminated ', startX + kWidth, y + 4);
+
+    const eWidth = ctx.measureText(' eliminated ').width;
+    ctx.fillStyle = vCol;
+    ctx.font = 'bold 12px "Exo 2"';
+    ctx.fillText(kf.victim, startX + kWidth + eWidth, y + 4);
+  });
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // === PERSONAL KILL FEED (bottom-center, your kills only) ===
+  ctx.save();
+  personalKillFeed.forEach((pk, i) => {
+    const alpha = Math.min(1, pk.timer / 0.4);
+    const slideUp = (1 - Math.min(1, pk.timer / 2.2)) * 10;
+    const y = H - 120 - i * 32 - slideUp;
+
+    ctx.globalAlpha = alpha;
+
+    // Background
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.beginPath();
+    ctx.roundRect(W/2 - 120, y - 12, 240, 28, 8);
+    ctx.fill();
+
+    // Gold border
+    ctx.strokeStyle = 'rgba(255,215,0,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(W/2 - 120, y - 12, 240, 28, 8);
+    ctx.stroke();
+
+    // Skull icon
+    ctx.font = '14px serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('\u2620', W/2 - 95, y + 5);
+
+    // Text
+    ctx.font = 'bold 13px "Exo 2"';
+    ctx.fillStyle = '#ffd740';
+    ctx.fillText('Eliminated', W/2 - 40, y + 5);
+
+    ctx.fillStyle = '#ef9a9a';
+    ctx.fillText(pk.victim, W/2 + 40, y + 5);
+
+    ctx.font = '10px "Exo 2"';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText('(' + pk.brawler + ')', W/2 + 40 + ctx.measureText(pk.victim).width/2 + 30, y + 5);
+  });
+  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawMinimap() {
