@@ -421,6 +421,7 @@ let camera = { x: 0, y: 0 };
 let keys = {};
 let mouse = { x: 0, y: 0 };
 let mouseDown = false;
+let mouseHoldTime = 0; // tracks how long mouse is held
 let gameRunning = false;
 let gameTime = GAME_DURATION;
 let lastTime = 0;
@@ -911,19 +912,68 @@ function update(dt) {
         ent.vy *= 0.707;
       }
 
-      // Aim
+      // Aim + Shoot system
+      // Hold mouse: manual aim with dotted line toward cursor
+      // Quick click: auto-aim at nearest enemy with inaccuracy
       const worldMouseX = mouse.x + camera.x;
       const worldMouseY = mouse.y + camera.y;
-      ent.angle = Math.atan2(worldMouseY - ent.y, worldMouseX - ent.x);
 
-      // Shoot
-      if (mouseDown && ent.shootCooldown <= 0) {
-        for (let i = 0; i < ent.brawler.burstCount; i++) {
-          const spread = (Math.random() - 0.5) * 0.1;
-          spawnProjectile(ent, ent.angle + spread);
+      if (mouseDown) {
+        mouseHoldTime += dt;
+        // Manual aim: point at mouse cursor
+        ent.angle = Math.atan2(worldMouseY - ent.y, worldMouseX - ent.x);
+
+        // Only shoot after a brief hold (0.15s) so taps use auto-aim
+        if (mouseHoldTime > 0.15 && ent.shootCooldown <= 0) {
+          for (let i = 0; i < ent.brawler.burstCount; i++) {
+            const spread = (Math.random() - 0.5) * 0.08;
+            spawnProjectile(ent, ent.angle + spread);
+          }
+          ent.shootCooldown = ent.brawler.reload;
         }
-        ent.shootCooldown = ent.brawler.reload;
       }
+
+      // Auto-aim on quick tap release
+      if (!mouseDown && mouseHoldTime > 0 && mouseHoldTime <= 0.15) {
+        // Find nearest enemy in range
+        let autoTarget = null, minDist = Infinity;
+        entities.forEach(e => {
+          if (e.team !== ent.team && e.alive) {
+            const adx = e.x - ent.x, ady = e.y - ent.y;
+            const d = Math.sqrt(adx * adx + ady * ady);
+            if (d < ent.brawler.range * 1.3 && d < minDist) {
+              minDist = d; autoTarget = e;
+            }
+          }
+        });
+
+        if (autoTarget && ent.shootCooldown <= 0) {
+          const adx = autoTarget.x - ent.x;
+          const ady = autoTarget.y - ent.y;
+          ent.angle = Math.atan2(ady, adx);
+
+          // Auto-aim inaccuracy: bigger spread so it's not OP
+          // Closer = more accurate, farther = less accurate
+          const distRatio = minDist / (ent.brawler.range * 1.3);
+          const autoSpread = 0.15 + distRatio * 0.25; // 0.15 to 0.4 radians
+
+          for (let i = 0; i < ent.brawler.burstCount; i++) {
+            const spread = (Math.random() - 0.5) * autoSpread;
+            spawnProjectile(ent, ent.angle + spread);
+          }
+          ent.shootCooldown = ent.brawler.reload;
+        } else if (!autoTarget && ent.shootCooldown <= 0) {
+          // No enemy in range: shoot toward mouse with big spread
+          ent.angle = Math.atan2(worldMouseY - ent.y, worldMouseX - ent.x);
+          for (let i = 0; i < ent.brawler.burstCount; i++) {
+            const spread = (Math.random() - 0.5) * 0.3;
+            spawnProjectile(ent, ent.angle + spread);
+          }
+          ent.shootCooldown = ent.brawler.reload;
+        }
+      }
+
+      if (!mouseDown) mouseHoldTime = 0;
     }
 
     // AI
@@ -1559,19 +1609,33 @@ function render() {
     ctx.globalAlpha = 1;
   });
 
-  // Player aim line
-  if (player && player.alive) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
+  // Player aim line — only shows when holding mouse
+  if (player && player.alive && mouseDown && mouseHoldTime > 0.1) {
+    const endX = player.x + Math.cos(player.angle) * player.brawler.range;
+    const endY = player.y + Math.sin(player.angle) * player.brawler.range;
+
+    // Dotted line
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 6]);
     ctx.beginPath();
     ctx.moveTo(player.x, player.y);
-    ctx.lineTo(
-      player.x + Math.cos(player.angle) * player.brawler.range,
-      player.y + Math.sin(player.angle) * player.brawler.range
-    );
+    ctx.lineTo(endX, endY);
     ctx.stroke();
     ctx.setLineDash([]);
+
+    // Crosshair at end
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(endX, endY, 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(endX - 12, endY); ctx.lineTo(endX - 5, endY);
+    ctx.moveTo(endX + 5, endY); ctx.lineTo(endX + 12, endY);
+    ctx.moveTo(endX, endY - 12); ctx.lineTo(endX, endY - 5);
+    ctx.moveTo(endX, endY + 5); ctx.lineTo(endX, endY + 12);
+    ctx.stroke();
   }
 
   ctx.restore();
