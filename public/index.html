@@ -69,9 +69,45 @@ body{background:#0f1923;overflow:hidden;font-family:'Exo 2',sans-serif;user-sele
 .overlay-panel{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;z-index:110;flex-direction:column;align-items:center;justify-content:center}
 .overlay-panel.open{display:flex}
 .panel-box{background:#1a2636;border-radius:20px;border:2px solid rgba(255,255,255,0.08);width:90%;max-width:700px;max-height:80vh;overflow-y:auto;padding:24px;position:relative}
+.panel-fullscreen{width:96%;max-width:1100px;max-height:90vh}
 .panel-close{position:absolute;top:12px;right:16px;font-size:24px;cursor:pointer;color:rgba(255,255,255,0.5);z-index:2}
 .panel-close:hover{color:#fff}
 .panel-title{font-family:'Russo One',sans-serif;font-size:22px;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+
+/* Brawler panel grid */
+.brawlers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.brawler-card-full{background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:center}
+.brawler-card-full:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.05)}
+.brawler-card-full.locked{opacity:0.5}
+.bcf-icon{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;border:3px solid;margin-bottom:8px}
+.bcf-name{font-family:'Russo One',sans-serif;font-size:16px}
+.bcf-role{font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+.bcf-level{font-size:12px;color:#ffd740;font-family:'Russo One',sans-serif;margin-bottom:6px}
+.bcf-pp-bar{width:100%;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.bcf-pp-fill{height:100%;background:linear-gradient(90deg,#7c4dff,#536dfe);border-radius:3px}
+.bcf-stats{font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:8px;text-align:center}
+.bcf-btn{padding:8px 20px;border:none;border-radius:8px;font-family:'Russo One',sans-serif;font-size:11px;cursor:pointer;transition:all 0.15s}
+.bcf-upgrade{background:linear-gradient(135deg,#ffd740,#ffab00);color:#1a1a2e}
+.bcf-upgrade:hover{transform:scale(1.05)}
+.bcf-upgrade.disabled{opacity:0.3;pointer-events:none}
+.bcf-unlock{background:linear-gradient(135deg,#66bb6a,#43a047);color:#fff}
+.bcf-max{color:#ffd740;font-family:'Russo One',sans-serif;font-size:11px}
+.bcf-lock-icon{font-size:28px;margin:10px 0}
+
+/* Brawler detail expand */
+.brawler-detail-panel{display:none;background:rgba(0,0,0,0.3);border-radius:14px;padding:16px;margin-top:8px;width:100%;text-align:left}
+.brawler-detail-panel.open{display:block}
+.bdp-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.bdp-stat{background:rgba(255,255,255,0.04);padding:6px 10px;border-radius:6px;display:flex;justify-content:space-between}
+.bdp-stat-label{font-size:10px;color:rgba(255,255,255,0.4)}
+.bdp-stat-val{font-family:'Russo One',sans-serif;font-size:12px}
+.bdp-ability{font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;display:flex;align-items:center;gap:6px}
+.bdp-key{background:#7c4dff;color:#fff;padding:1px 6px;border-radius:3px;font-family:'Russo One',sans-serif;font-size:9px}
+
+/* Shop fullscreen */
+.shop-section{margin-bottom:24px}
+.shop-section-title{font-family:'Russo One',sans-serif;font-size:16px;margin-bottom:12px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:8px}
+.shop-grid-full{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
 
 /* Shop grid */
 .shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
@@ -179,7 +215,7 @@ body{background:#0f1923;overflow:hidden;font-family:'Exo 2',sans-serif;user-sele
   <div class="menu-center">
     <!-- Left nav buttons -->
     <div class="left-panel">
-      <div class="nav-btn" onclick="openPanel('upgrade')">⬆️<span>UPGRADE</span></div>
+      <div class="nav-btn" onclick="openPanel('brawlers')">⚔️<span>BRAWLERS</span></div>
       <div class="nav-btn" onclick="openPanel('shop')">🛒<span>SHOP</span></div>
       <div class="nav-btn" onclick="openPanel('quests')">📋<span>QUESTS</span></div>
     </div>
@@ -204,8 +240,8 @@ body{background:#0f1923;overflow:hidden;font-family:'Exo 2',sans-serif;user-sele
 </div>
 
 <!-- OVERLAY PANELS -->
-<div class="overlay-panel" id="panel-upgrade"><div class="panel-box"><div class="panel-close" onclick="closePanel('upgrade')">✕</div><div class="panel-title">⬆️ Upgrade Brawler</div><div id="upgrade-content"></div></div></div>
-<div class="overlay-panel" id="panel-shop"><div class="panel-box"><div class="panel-close" onclick="closePanel('shop')">✕</div><div class="panel-title">🛒 Shop</div><div id="shop-content"></div></div></div>
+<div class="overlay-panel" id="panel-brawlers"><div class="panel-box panel-fullscreen"><div class="panel-close" onclick="closePanel('brawlers')">✕</div><div class="panel-title">⚔️ Brawlers</div><div id="brawlers-content"></div></div></div>
+<div class="overlay-panel" id="panel-shop"><div class="panel-box panel-fullscreen"><div class="panel-close" onclick="closePanel('shop')">✕</div><div class="panel-title">🛒 Shop</div><div id="shop-content"></div></div></div>
 <div class="overlay-panel" id="panel-quests"><div class="panel-box"><div class="panel-close" onclick="closePanel('quests')">✕</div><div class="panel-title">📋 Daily Quests</div><div id="quests-content"></div></div></div>
 
 <!-- MATCHMAKING -->
@@ -1823,64 +1859,140 @@ function buildBrawlerPips() {
 // Panels
 function openPanel(name) {
   document.getElementById('panel-' + name).classList.add('open');
-  if (name === 'upgrade') renderUpgradePanel();
+  if (name === 'brawlers') renderBrawlersPanel();
   if (name === 'shop') renderShopPanel();
   if (name === 'quests') renderQuestsPanel();
 }
 function closePanel(name) { document.getElementById('panel-' + name).classList.remove('open'); }
 
-function renderUpgradePanel() {
-  const b = BRAWLERS[selectedBrawler];
-  const bd = saveData.brawlers[selectedBrawler];
-  const pp = UPGRADE_COSTS[bd.level]||999;
-  const cc = COIN_COSTS[bd.level]||9999;
-  const can = bd.level<9 && bd.powerPoints>=pp && saveData.coins>=cc;
-  const el = document.getElementById('upgrade-content');
+let expandedBrawler = -1;
 
-  if (!bd.unlocked) {
-    el.innerHTML = '<div style="text-align:center;padding:30px"><div style="font-size:64px;margin-bottom:16px">'+b.icon+'</div><div style="font-family:Russo One;font-size:20px;margin-bottom:8px">'+b.name+'</div><div style="color:rgba(255,255,255,0.4);margin-bottom:20px">'+b.role+'</div><button class="unlock-panel-btn" onclick="unlockBrawler('+selectedBrawler+')">Unlock for 500 🪙</button></div>';
-    return;
+function renderBrawlersPanel() {
+  const el = document.getElementById('brawlers-content');
+  let h = '<div class="brawlers-grid">';
+  BRAWLERS.forEach((b, i) => {
+    const bd = saveData.brawlers[i];
+    const pp = UPGRADE_COSTS[bd.level] || 999;
+    const cc = COIN_COSTS[bd.level] || 9999;
+    const can = bd.level < 9 && bd.powerPoints >= pp && saveData.coins >= cc;
+    const expanded = expandedBrawler === i;
+    h += '<div class="brawler-card-full ' + (!bd.unlocked ? 'locked' : '') + '" onclick="toggleBrawlerDetail(' + i + ')">';
+    h += '<div class="bcf-icon" style="background:' + b.color + '33;border-color:' + b.color + '">' + b.icon + '</div>';
+    h += '<div class="bcf-name">' + b.name + '</div>';
+    h += '<div class="bcf-role">' + b.role + '</div>';
+    if (bd.unlocked) {
+      h += '<div class="bcf-level">Level ' + bd.level + ' / 9</div>';
+      h += '<div class="bcf-pp-bar"><div class="bcf-pp-fill" style="width:' + Math.min(100, (bd.powerPoints / pp) * 100) + '%"></div></div>';
+      h += '<div class="bcf-stats">HP: ' + (b.hp + (bd.level - 1) * 200) + ' \u2022 DMG: ' + (b.damage + (bd.level - 1) * 30) + '</div>';
+      h += '<div class="brawler-detail-panel ' + (expanded ? 'open' : '') + '">';
+      h += '<div class="bdp-stats">';
+      h += '<div class="bdp-stat"><span class="bdp-stat-label">HP</span><span class="bdp-stat-val">' + (b.hp + (bd.level - 1) * 200) + '</span></div>';
+      h += '<div class="bdp-stat"><span class="bdp-stat-label">DMG</span><span class="bdp-stat-val">' + (b.damage + (bd.level - 1) * 30) + '</span></div>';
+      h += '<div class="bdp-stat"><span class="bdp-stat-label">Range</span><span class="bdp-stat-val">' + b.range + '</span></div>';
+      h += '<div class="bdp-stat"><span class="bdp-stat-label">Speed</span><span class="bdp-stat-val">' + b.speed + '</span></div>';
+      h += '<div class="bdp-stat"><span class="bdp-stat-label">Ammo</span><span class="bdp-stat-val">' + b.maxAmmo + '</span></div>';
+      h += '<div class="bdp-stat"><span class="bdp-stat-label">Trophies</span><span class="bdp-stat-val">' + bd.trophies + '</span></div>';
+      h += '</div>';
+      h += '<div class="bdp-ability"><span class="bdp-key">Q</span> ' + b.abilityName + ' \u2014 ' + b.abilityDesc + '</div>';
+      h += '<div class="bdp-ability"><span class="bdp-key">R</span> ' + b.superName + ' \u2014 ' + b.superDesc + '</div>';
+      h += '<div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.35)">Power Points: ' + bd.powerPoints + ' / ' + pp + '</div>';
+      h += '</div>';
+      if (bd.level < 9) {
+        h += '<button class="bcf-btn bcf-upgrade ' + (can ? '' : 'disabled') + '" onclick="event.stopPropagation();upgradeBrawlerFromPanel(' + i + ')">Upgrade \u2014 ' + cc + ' \U0001fa99</button>';
+      } else {
+        h += '<div class="bcf-max">\u2728 MAX \u2728</div>';
+      }
+    } else {
+      h += '<div class="bcf-lock-icon">\U0001f512</div>';
+      h += '<button class="bcf-btn bcf-unlock" onclick="event.stopPropagation();unlockBrawlerFromPanel(' + i + ')">Unlock \u2014 500 \U0001fa99</button>';
+    }
+    h += '</div>';
+  });
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+function toggleBrawlerDetail(idx) {
+  expandedBrawler = expandedBrawler === idx ? -1 : idx;
+  renderBrawlersPanel();
+}
+
+function unlockBrawlerFromPanel(idx) {
+  if (saveData.coins >= 500 && !saveData.brawlers[idx].unlocked) {
+    saveData.coins -= 500;
+    saveData.brawlers[idx].unlocked = true;
+    saveToDisk(); renderMenu(); renderBrawlersPanel();
   }
+}
 
-  el.innerHTML = '<div class="upgrade-layout"><div class="upgrade-preview"><div class="up-icon" style="background:'+b.color+'33;border-color:'+b.color+'">'+b.icon+'</div><div style="font-family:Russo One;font-size:18px">'+b.name+'</div><div style="font-size:11px;color:rgba(255,255,255,0.4)">Level '+bd.level+' / 9</div></div><div class="upgrade-info"><div class="up-stats"><div class="up-stat"><div class="up-stat-label">HP</div><div class="up-stat-val">'+(b.hp+(bd.level-1)*200)+'</div></div><div class="up-stat"><div class="up-stat-label">DMG</div><div class="up-stat-val">'+(b.damage+(bd.level-1)*30)+'</div></div><div class="up-stat"><div class="up-stat-label">Range</div><div class="up-stat-val">'+b.range+'</div></div><div class="up-stat"><div class="up-stat-label">Speed</div><div class="up-stat-val">'+b.speed+'</div></div></div><div class="up-pp-label">Power Points: '+bd.powerPoints+' / '+pp+'</div><div class="up-pp-bar"><div class="up-pp-fill" style="width:'+Math.min(100,(bd.powerPoints/pp)*100)+'%"></div></div>'+(bd.level<9?'<button class="up-btn '+(can?'':'disabled')+'" onclick="upgradeBrawler('+selectedBrawler+')">Upgrade — '+cc+' 🪙</button>':'<div class="up-max">✨ MAX LEVEL ✨</div>')+'</div></div>';
+function upgradeBrawlerFromPanel(idx) {
+  const bd = saveData.brawlers[idx];
+  const pp = UPGRADE_COSTS[bd.level];
+  const cc = COIN_COSTS[bd.level];
+  if (bd.level < 9 && bd.powerPoints >= pp && saveData.coins >= cc) {
+    bd.powerPoints -= pp; saveData.coins -= cc; bd.level++;
+    saveToDisk(); renderMenu(); renderBrawlersPanel();
+  }
 }
 
 function renderShopPanel() {
   const el = document.getElementById('shop-content');
-  let h = '<div class="shop-grid">';
-  BRAWLERS.forEach((b,bi) => {
+  let h = '';
+  // Skins
+  h += '<div class="shop-section"><div class="shop-section-title">\U0001f3a8 Brawler Skins</div><div class="shop-grid-full">';
+  BRAWLERS.forEach((b, bi) => {
     const bd = saveData.brawlers[bi];
     if (!bd.unlocked) return;
     SKINS[bi].forEach(skin => {
       if (skin.type === 'free') return;
       const owned = bd.skin === skin.id;
-      h += '<div class="shop-card"><div class="sc-preview" style="background:'+skin.color+'33;border-color:'+skin.color+'">'+b.icon+'</div><div class="sc-name">'+skin.name+'</div><div class="sc-sub">'+b.name+'</div>'+(owned?'<div class="sc-owned">Equipped ✓</div>':'<button class="sc-btn" onclick="buySkin('+bi+',\''+skin.id+'\','+skin.cost+')">'+skin.cost+' 💎</button>')+'</div>';
+      h += '<div class="shop-card"><div class="sc-preview" style="background:' + skin.color + '33;border-color:' + skin.color + '">' + b.icon + '</div><div class="sc-name">' + skin.name + '</div><div class="sc-sub">' + b.name + '</div>' + (owned ? '<div class="sc-owned">Equipped \u2713</div>' : '<button class="sc-btn" onclick="buySkin(' + bi + ',\'' + skin.id + '\',' + skin.cost + ')">' + skin.cost + ' \U0001f48e</button>') + '</div>';
     });
   });
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00">⬆️</div><div class="sc-name">10 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="buyPowerPoints()">100 🪙</button></div>';
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff">💎</div><div class="sc-name">50 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="buyBling()">300 🪙</button></div>';
-  h += '</div>';
+  h += '</div></div>';
+  // Power ups
+  h += '<div class="shop-section"><div class="shop-section-title">\u2b06\ufe0f Power Ups</div><div class="shop-grid-full">';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00"><span style="font-size:30px">\u2b06\ufe0f</span></div><div class="sc-name">10 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="buyPowerPoints()">100 \U0001fa99</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00"><span style="font-size:30px">\u2b06\ufe0f\u2b06\ufe0f</span></div><div class="sc-name">30 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="buyPowerPointsBig()">250 \U0001fa99</button></div>';
+  h += '</div></div>';
+  // Currency
+  h += '<div class="shop-section"><div class="shop-section-title">\U0001f48e Premium Currency</div><div class="shop-grid-full">';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff"><span style="font-size:30px">\U0001f48e</span></div><div class="sc-name">50 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="buyBling()">300 \U0001fa99</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff"><span style="font-size:30px">\U0001f48e\U0001f48e</span></div><div class="sc-name">150 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="buyBlingBig()">800 \U0001fa99</button></div>';
+  h += '</div></div>';
+  // Unlock brawlers
+  const locked = BRAWLERS.filter((b, i) => !saveData.brawlers[i].unlocked);
+  if (locked.length > 0) {
+    h += '<div class="shop-section"><div class="shop-section-title">\U0001f513 Unlock Brawlers</div><div class="shop-grid-full">';
+    BRAWLERS.forEach((b, i) => {
+      if (saveData.brawlers[i].unlocked) return;
+      h += '<div class="shop-card"><div class="sc-preview" style="background:' + b.color + '33;border-color:' + b.color + '">' + b.icon + '</div><div class="sc-name">' + b.name + '</div><div class="sc-sub">' + b.role + '</div><button class="sc-btn" onclick="unlockBrawler(' + i + ')">500 \U0001fa99</button></div>';
+    });
+    h += '</div></div>';
+  }
   el.innerHTML = h;
 }
 
 function renderQuestsPanel() {
   const el = document.getElementById('quests-content');
   let h = '';
-  saveData.quests.forEach((q,i) => {
-    const pct = Math.min(100,(q.progress/q.target)*100);
+  saveData.quests.forEach((q, i) => {
+    const pct = Math.min(100, (q.progress / q.target) * 100);
     const done = q.progress >= q.target;
-    h += '<div class="quest-row '+(done?'done':'')+' '+(q.claimed?'claimed':'')+'"><div class="qr-icon">'+q.icon+'</div><div class="qr-info"><div class="qr-desc">'+q.desc+'</div><div class="qr-bar"><div class="qr-fill" style="width:'+pct+'%"></div></div><div class="qr-prog">'+Math.min(q.progress,q.target)+' / '+q.target+'</div></div><div class="qr-reward">'+(q.claimed?'✅':done?'<button class="qr-claim" onclick="claimQuest('+i+')">'+q.reward+(q.rewardType==='coins'?' 🪙':' 💎')+'</button>':q.reward+(q.rewardType==='coins'?' 🪙':' 💎'))+'</div></div>';
+    h += '<div class="quest-row ' + (done ? 'done' : '') + ' ' + (q.claimed ? 'claimed' : '') + '"><div class="qr-icon">' + q.icon + '</div><div class="qr-info"><div class="qr-desc">' + q.desc + '</div><div class="qr-bar"><div class="qr-fill" style="width:' + pct + '%"></div></div><div class="qr-prog">' + Math.min(q.progress, q.target) + ' / ' + q.target + '</div></div><div class="qr-reward">' + (q.claimed ? '\u2705' : done ? '<button class="qr-claim" onclick="claimQuest(' + i + ')">' + q.reward + (q.rewardType === 'coins' ? ' \U0001fa99' : ' \U0001f48e') + '</button>' : q.reward + (q.rewardType === 'coins' ? ' \U0001fa99' : ' \U0001f48e')) + '</div></div>';
   });
   el.innerHTML = h;
 }
 
 // Actions
 function selectMenuBrawler(idx){selectedBrawler=idx;renderMenu()}
-function unlockBrawler(idx){if(saveData.coins>=500&&!saveData.brawlers[idx].unlocked){saveData.coins-=500;saveData.brawlers[idx].unlocked=true;saveToDisk();renderMenu();renderUpgradePanel()}}
-function upgradeBrawler(idx){const bd=saveData.brawlers[idx];const pp=UPGRADE_COSTS[bd.level];const cc=COIN_COSTS[bd.level];if(bd.level<9&&bd.powerPoints>=pp&&saveData.coins>=cc){bd.powerPoints-=pp;saveData.coins-=cc;bd.level++;saveToDisk();renderMenu();renderUpgradePanel()}}
+function unlockBrawler(idx){if(saveData.coins>=500&&!saveData.brawlers[idx].unlocked){saveData.coins-=500;saveData.brawlers[idx].unlocked=true;saveToDisk();renderMenu();if(document.getElementById('panel-shop').classList.contains('open'))renderShopPanel();if(document.getElementById('panel-brawlers').classList.contains('open'))renderBrawlersPanel()}}
+function upgradeBrawler(idx){const bd=saveData.brawlers[idx];const pp=UPGRADE_COSTS[bd.level];const cc=COIN_COSTS[bd.level];if(bd.level<9&&bd.powerPoints>=pp&&saveData.coins>=cc){bd.powerPoints-=pp;saveData.coins-=cc;bd.level++;saveToDisk();renderMenu()}}
 function buySkin(bi,sid,cost){if(saveData.bling>=cost){saveData.bling-=cost;saveData.brawlers[bi].skin=sid;saveToDisk();renderMenu();renderShopPanel()}}
 function buyPowerPoints(){if(saveData.coins>=100){saveData.coins-=100;const ul=saveData.brawlers.filter(b=>b.unlocked);ul[Math.floor(Math.random()*ul.length)].powerPoints+=10;saveToDisk();renderMenu();renderShopPanel()}}
+function buyPowerPointsBig(){if(saveData.coins>=250){saveData.coins-=250;const ul=saveData.brawlers.filter(b=>b.unlocked);ul[Math.floor(Math.random()*ul.length)].powerPoints+=30;saveToDisk();renderMenu();renderShopPanel()}}
 function buyBling(){if(saveData.coins>=300){saveData.coins-=300;saveData.bling+=50;saveToDisk();renderMenu();renderShopPanel()}}
+function buyBlingBig(){if(saveData.coins>=800){saveData.coins-=800;saveData.bling+=150;saveToDisk();renderMenu();renderShopPanel()}}
 function claimQuest(i){const q=saveData.quests[i];if(q.progress>=q.target&&!q.claimed){q.claimed=true;if(q.rewardType==='coins')saveData.coins+=q.reward;else saveData.bling+=q.reward;saveToDisk();renderMenu();renderQuestsPanel()}}
 
 // Loading
