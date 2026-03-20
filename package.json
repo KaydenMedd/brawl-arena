@@ -1,0 +1,18 @@
+{
+  "name": "brawl-arena",
+  "version": "1.0.0",
+  "description": "3v3 MOBA browser game with real-time multiplayer",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ws": "^8.18.0",
+    "uuid": "^10.0.0"
+  }
+}
