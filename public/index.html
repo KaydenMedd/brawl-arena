@@ -79,6 +79,7 @@ body{background:#0f1923;overflow:hidden;font-family:'Exo 2',sans-serif;user-sele
 .brawler-card-full{background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:center}
 .brawler-card-full:hover{border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.05)}
 .brawler-card-full.locked{opacity:0.5}
+.bcf-canvas{width:120px;height:140px;display:block;margin:0 auto}
 .bcf-icon{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;border:3px solid;margin-bottom:8px}
 .bcf-name{font-family:'Russo One',sans-serif;font-size:16px}
 .bcf-role{font-size:10px;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
@@ -1718,7 +1719,162 @@ const COIN_COSTS=[0,20,35,75,140,280,550,1000,1500];
 const SKINS={0:[{id:'default',name:'Default',cost:0,type:'free',color:'#ff7043'},{id:'inferno',name:'Inferno',cost:50,type:'bling',color:'#ff1744'},{id:'golden',name:'Golden Blaze',cost:150,type:'bling',color:'#ffd740'}],1:[{id:'default',name:'Default',cost:0,type:'free',color:'#4fc3f7'},{id:'arctic',name:'Arctic',cost:50,type:'bling',color:'#e0f7fa'},{id:'dark_ice',name:'Dark Ice',cost:150,type:'bling',color:'#1a237e'}],2:[{id:'default',name:'Default',cost:0,type:'free',color:'#66bb6a'},{id:'war_machine',name:'War Machine',cost:50,type:'bling',color:'#546e7a'},{id:'gold_armor',name:'Gold Armor',cost:150,type:'bling',color:'#f9a825'}],3:[{id:'default',name:'Default',cost:0,type:'free',color:'#ab47bc'},{id:'void',name:'Void',cost:50,type:'bling',color:'#1a1a2e'},{id:'neon',name:'Neon Ghost',cost:150,type:'bling',color:'#00e676'}]};
 loadSave();
 
-// ========== CHARACTER PREVIEW RENDERER ==========
+// ========== 3D CHARACTER RENDERER (reusable) ==========
+let lobbyRotation = 0;
+let lobbyDragging = false;
+let lobbyDragStart = 0;
+let lobbyRotStart = 0;
+let previewSkinOverride = null; // for shop preview
+
+// Make lobby canvas draggable for spinning
+document.addEventListener('mousedown', e => {
+  const cv = document.getElementById('charPreviewCanvas');
+  if (cv && e.target === cv) { lobbyDragging = true; lobbyDragStart = e.clientX; lobbyRotStart = lobbyRotation; }
+});
+document.addEventListener('mousemove', e => {
+  if (lobbyDragging) lobbyRotation = lobbyRotStart + (e.clientX - lobbyDragStart) * 0.01;
+});
+document.addEventListener('mouseup', () => { lobbyDragging = false; });
+
+function draw3DChar(c, cx, cy, scale, brawlerIdx, skinColor, rotation, time) {
+  const b = BRAWLERS[brawlerIdx];
+  const col = skinColor || b.color;
+  const rot = rotation || 0;
+  const t = time || Date.now() / 1000;
+  const bob = Math.sin(t * 2) * 2;
+  const breathe = Math.sin(t * 1.5) * 0.015;
+
+  // Pseudo-3D: use rotation to shift body parts for parallax
+  const rx = Math.sin(rot) * 0.3; // -0.3 to 0.3
+  const facing = Math.cos(rot) >= 0 ? 1 : -1;
+  const depth = Math.cos(rot); // 1=front, -1=back, 0=side
+
+  c.save();
+  c.translate(cx, cy + bob);
+  c.scale((scale + breathe) * facing, scale + breathe);
+
+  // Shadow
+  c.fillStyle = 'rgba(0,0,0,0.2)';
+  c.beginPath(); c.ellipse(0, 28/scale, 14, 4, 0, 0, Math.PI*2); c.fill();
+
+  // === LEGS (shift with rotation) ===
+  const legSpread = 6 + Math.abs(rx) * 2;
+  c.fillStyle = col;
+  // Back leg (darker when visible)
+  c.globalAlpha = 0.7;
+  c.beginPath(); c.roundRect(-legSpread + rx*4, 10, 7, 14, 2); c.fill();
+  c.fillStyle = '#37474f'; c.beginPath(); c.roundRect(-legSpread-1 + rx*4, 22, 9, 5, [0,0,3,3]); c.fill();
+  c.globalAlpha = 1;
+  // Front leg
+  c.fillStyle = col;
+  c.beginPath(); c.roundRect(legSpread-7 + rx*4, 10, 7, 14, 2); c.fill();
+  c.fillStyle = '#37474f'; c.beginPath(); c.roundRect(legSpread-8 + rx*4, 22, 9, 5, [0,0,3,3]); c.fill();
+
+  // === BODY ===
+  // Back (darker)
+  c.fillStyle = col; c.globalAlpha = 0.6;
+  c.beginPath(); c.roundRect(-13 + rx*3, -6, 26, 20, 4); c.fill();
+  c.globalAlpha = 1;
+  // Front torso
+  c.fillStyle = col;
+  c.beginPath(); c.roundRect(-12 + rx*2, -5, 24, 18, 4); c.fill();
+  // Highlight (3D shading)
+  const hlX = -rx * 8;
+  c.fillStyle = 'rgba(255,255,255,0.18)';
+  c.beginPath(); c.roundRect(hlX - 6, -3, 14, 12, 2); c.fill();
+  // Dark side
+  c.fillStyle = 'rgba(0,0,0,0.12)';
+  c.beginPath(); c.roundRect(hlX + 6, -3, 8, 12, 2); c.fill();
+
+  // Belt
+  c.fillStyle = '#4a4a4a';
+  c.fillRect(-12 + rx*2, 10, 24, 3);
+
+  // === ARMS (parallax shift) ===
+  // Back arm
+  c.fillStyle = col; c.globalAlpha = 0.65;
+  c.beginPath(); c.roundRect(-15 + rx*6, -2, 7, 15, 3); c.fill();
+  c.fillStyle = '#dbb896'; c.beginPath(); c.arc(-11 + rx*6, 15, 3.5, 0, Math.PI*2); c.fill();
+  c.globalAlpha = 1;
+  // Front arm
+  c.fillStyle = col;
+  c.beginPath(); c.roundRect(10 + rx*6, -2, 7, 15, 3); c.fill();
+  c.fillStyle = '#ffcc80'; c.beginPath(); c.arc(14 + rx*6, 15, 3.5, 0, Math.PI*2); c.fill();
+
+  // Weapon (shifts with rotation)
+  if (b.name === 'Blaze') {
+    c.fillStyle = '#616161'; c.beginPath(); c.roundRect(11 + rx*6, 10, 6, 12, 2); c.fill();
+    c.fillStyle = '#ff6d00'; const fl = Math.sin(t*6)*2;
+    c.beginPath(); c.arc(14 + rx*6, 24 + fl, 3, 0, Math.PI*2); c.fill();
+  } else if (b.name === 'Frostbite') {
+    c.fillStyle = '#455a64'; c.beginPath(); c.roundRect(12 + rx*6, 8, 4, 20, 1); c.fill();
+    c.fillStyle = '#00e5ff'; c.beginPath(); c.arc(14 + rx*6, 14, 2, 0, Math.PI*2); c.fill();
+  } else if (b.name === 'Tank') {
+    c.fillStyle = '#5d4037'; c.beginPath(); c.roundRect(10 + rx*6, 10, 8, 10, 2); c.fill();
+    c.fillStyle = '#424242'; c.beginPath(); c.roundRect(12 + rx*6, 18, 4, 8, 1); c.fill();
+  } else if (b.name === 'Phantom') {
+    c.fillStyle = '#b0bec5';
+    c.beginPath(); c.moveTo(14 + rx*6, 12); c.lineTo(11 + rx*6, 24); c.lineTo(14 + rx*6, 22); c.lineTo(17 + rx*6, 24); c.closePath(); c.fill();
+  }
+
+  // === HEAD (major parallax) ===
+  const headX = rx * 5;
+  c.fillStyle = '#ffcc80';
+  c.beginPath(); c.arc(headX, -14, 12, 0, Math.PI*2); c.fill();
+  // 3D head highlight
+  c.fillStyle = '#ffe0b2';
+  c.beginPath(); c.arc(headX - 3 - rx*3, -17, 5, 0, Math.PI*2); c.fill();
+
+  // === BRAWLER FEATURES ===
+  if (b.name === 'Blaze') {
+    for (let i = 0; i < 6; i++) {
+      const hx = headX - 7 + i * 3;
+      const fl = Math.sin(t*6 + i*1.2) * 3;
+      c.fillStyle = i%2 === 0 ? '#ff6d00' : '#ffab00';
+      c.beginPath(); c.moveTo(hx-2,-24); c.lineTo(hx,-32-fl); c.lineTo(hx+2,-24); c.closePath(); c.fill();
+    }
+    // Face
+    c.fillStyle = '#fff'; c.fillRect(headX-6,-16,4,4); c.fillRect(headX+2,-16,4,4);
+    c.fillStyle = '#212121'; c.fillRect(headX-5,-15,2,3); c.fillRect(headX+3,-15,2,3);
+    c.strokeStyle = '#5d4037'; c.lineWidth = 1.5; c.beginPath(); c.arc(headX,-8,3,0,Math.PI); c.stroke();
+  } else if (b.name === 'Frostbite') {
+    c.fillStyle = col;
+    c.beginPath(); c.moveTo(headX-14,-12); c.quadraticCurveTo(headX,-32,headX+14,-12); c.lineTo(headX+11,-6); c.lineTo(headX-11,-6); c.closePath(); c.fill();
+    // Darker hood layer
+    const darkerCol = '#0d47a1';
+    c.fillStyle = darkerCol;
+    c.beginPath(); c.moveTo(headX-12,-11); c.quadraticCurveTo(headX,-28,headX+12,-11); c.lineTo(headX+10,-7); c.lineTo(headX-10,-7); c.closePath(); c.fill();
+    c.fillStyle = '#00e5ff'; c.shadowColor='#00e5ff'; c.shadowBlur=8;
+    c.beginPath(); c.arc(headX-4,-13,2.5,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(headX+4,-13,2.5,0,Math.PI*2); c.fill();
+    c.shadowBlur = 0;
+  } else if (b.name === 'Tank') {
+    c.fillStyle = col;
+    c.beginPath(); c.arc(headX,-16,14,Math.PI,Math.PI*2); c.fill();
+    c.fillRect(headX-14,-16,28,5);
+    c.fillStyle = '#c8e6c9'; c.beginPath(); c.roundRect(headX-8,-14,16,5,2); c.fill();
+    c.fillStyle = '#fff'; c.fillRect(headX-6,-13,4,4); c.fillRect(headX+2,-13,4,4);
+    c.fillStyle = '#212121'; c.fillRect(headX-5,-12,2,3); c.fillRect(headX+3,-12,2,3);
+  } else if (b.name === 'Phantom') {
+    c.fillStyle = col;
+    c.beginPath(); c.moveTo(headX-13,-9); c.quadraticCurveTo(headX,-32,headX+13,-9); c.lineTo(headX+10,-4); c.lineTo(headX-10,-4); c.closePath(); c.fill();
+    c.fillStyle = '#263238'; c.beginPath(); c.roundRect(headX-7,-10,14,5,2); c.fill();
+    c.fillStyle = '#ea80fc'; c.shadowColor='#ea80fc'; c.shadowBlur=10;
+    c.beginPath(); c.arc(headX-4,-11,2.5,0,Math.PI*2); c.fill();
+    c.beginPath(); c.arc(headX+4,-11,2.5,0,Math.PI*2); c.fill();
+    c.shadowBlur = 0;
+  }
+
+  c.restore();
+}
+
+function getSkinColor(brawlerIdx) {
+  const bd = saveData.brawlers[brawlerIdx];
+  const skins = SKINS[brawlerIdx];
+  const activeSkin = skins.find(s => s.id === bd.skin);
+  return activeSkin ? activeSkin.color : BRAWLERS[brawlerIdx].color;
+}
+
 function drawCharPreview() {
   const cv = document.getElementById('charPreviewCanvas');
   if (!cv) return;
@@ -1727,82 +1883,34 @@ function drawCharPreview() {
   const bd = saveData.brawlers[selectedBrawler];
   c.clearRect(0, 0, 300, 380);
 
+  // Auto-rotate slowly when not dragging
+  if (!lobbyDragging) lobbyRotation += 0.008;
+
   // Platform glow
+  const col = previewSkinOverride || getSkinColor(selectedBrawler);
   const grad = c.createRadialGradient(150, 340, 10, 150, 340, 120);
-  grad.addColorStop(0, b.color + '40');
+  grad.addColorStop(0, col + '40');
   grad.addColorStop(1, 'transparent');
   c.fillStyle = grad;
   c.fillRect(0, 240, 300, 140);
 
   // Platform ellipse
-  c.fillStyle = b.color + '20';
+  c.fillStyle = col + '20';
   c.beginPath(); c.ellipse(150, 340, 80, 20, 0, 0, Math.PI*2); c.fill();
-  c.strokeStyle = b.color + '60';
+  c.strokeStyle = col + '60';
   c.lineWidth = 2;
   c.beginPath(); c.ellipse(150, 340, 80, 20, 0, 0, Math.PI*2); c.stroke();
 
-  const t = Date.now() / 1000;
-  const bob = Math.sin(t * 2) * 3;
-  const breathe = Math.sin(t * 1.5) * 0.02;
+  // Draw 3D character
+  draw3DChar(c, 150, 230, 2.5, selectedBrawler, col, lobbyRotation, Date.now()/1000);
 
-  c.save();
-  c.translate(150, 230 + bob);
-  c.scale(2.5 + breathe, 2.5 + breathe);
-
-  // Draw the character body using the same style as in-game
-  const col = b.color;
-  // Legs
-  c.fillStyle = col;
-  c.beginPath(); c.roundRect(-6, 10, 8, 14, 2); c.fill();
-  c.beginPath(); c.roundRect(0, 10, 8, 14, 2); c.fill();
-  // Boots
-  c.fillStyle = '#37474f';
-  c.beginPath(); c.roundRect(-7, 22, 10, 5, [0,0,3,3]); c.fill();
-  c.beginPath(); c.roundRect(-1, 22, 10, 5, [0,0,3,3]); c.fill();
-  // Body
-  c.fillStyle = col;
-  c.beginPath(); c.roundRect(-12, -5, 26, 18, 4); c.fill();
-  // Chest highlight
-  var lighter = col + 'aa';
+  // Drag hint
   c.fillStyle = 'rgba(255,255,255,0.15)';
-  c.beginPath(); c.roundRect(-8, -3, 18, 12, 2); c.fill();
-  // Arms
-  c.fillStyle = col;
-  c.beginPath(); c.roundRect(-16, -2, 7, 14, 3); c.fill();
-  c.beginPath(); c.roundRect(11, -2, 7, 14, 3); c.fill();
-  // Hands
-  c.fillStyle = '#ffcc80';
-  c.beginPath(); c.arc(-12, 14, 4, 0, Math.PI*2); c.fill();
-  c.beginPath(); c.arc(14, 14, 4, 0, Math.PI*2); c.fill();
-
-  // Head
-  c.fillStyle = '#ffcc80';
-  c.beginPath(); c.arc(1, -14, 12, 0, Math.PI*2); c.fill();
-  c.fillStyle = '#ffe0b2';
-  c.beginPath(); c.arc(-2, -17, 5, 0, Math.PI*2); c.fill();
-
-  // Brawler-specific features
-  if (b.name === 'Blaze') {
-    for (var i=0;i<6;i++){var hx=-7+i*3,fl=Math.sin(t*6+i*1.2)*3;c.fillStyle=i%2===0?'#ff6d00':'#ffab00';c.beginPath();c.moveTo(hx-2,-24);c.lineTo(hx,-32-fl);c.lineTo(hx+2,-24);c.closePath();c.fill()}
-  } else if (b.name === 'Frostbite') {
-    c.fillStyle = '#1565c0'; c.beginPath(); c.moveTo(-14,-12); c.quadraticCurveTo(1,-32,16,-12); c.lineTo(12,-6); c.lineTo(-12,-6); c.closePath(); c.fill();
-    c.fillStyle = '#00e5ff'; c.shadowColor='#00e5ff'; c.shadowBlur=8; c.beginPath(); c.arc(-4,-14,2.5,0,Math.PI*2); c.fill(); c.beginPath(); c.arc(6,-14,2.5,0,Math.PI*2); c.fill(); c.shadowBlur=0;
-  } else if (b.name === 'Tank') {
-    c.fillStyle = '#2e7d32'; c.beginPath(); c.arc(1,-16,14,Math.PI,Math.PI*2); c.fill(); c.fillRect(-13,-16,28,5);
-    c.fillStyle = '#c8e6c9'; c.beginPath(); c.roundRect(-8,-14,18,5,2); c.fill();
-  } else if (b.name === 'Phantom') {
-    c.fillStyle = '#38006b'; c.beginPath(); c.moveTo(-14,-10); c.quadraticCurveTo(1,-34,16,-10); c.lineTo(12,-4); c.lineTo(-12,-4); c.closePath(); c.fill();
-    c.fillStyle = '#ea80fc'; c.shadowColor='#ea80fc'; c.shadowBlur=10; c.beginPath(); c.arc(-4,-13,2.5,0,Math.PI*2); c.fill(); c.beginPath(); c.arc(6,-13,2.5,0,Math.PI*2); c.fill(); c.shadowBlur=0;
-  }
-
-  // Eyes (generic for Blaze/Tank)
-  if (b.name === 'Blaze' || b.name === 'Tank') {
-    c.fillStyle='#fff'; c.fillRect(-5,-16,4,4); c.fillRect(3,-16,4,4);
-    c.fillStyle='#212121'; c.fillRect(-4,-15,2,3); c.fillRect(4,-15,2,3);
-  }
+  c.font = '10px "Exo 2"';
+  c.textAlign = 'center';
+  c.fillText('↔ Drag to spin', 150, 370);
 
   // Level badge
-  c.restore();
   if (bd.unlocked) {
     c.fillStyle = '#ffd740';
     c.beginPath(); c.roundRect(120, 300, 60, 24, 8); c.fill();
@@ -1821,6 +1929,7 @@ function drawCharPreview() {
 
   document.getElementById('char-name').textContent = b.name;
   document.getElementById('char-role').textContent = b.role;
+  previewSkinOverride = null;
 }
 
 // ========== MENU SYSTEM ==========
@@ -1876,26 +1985,37 @@ function renderBrawlersPanel() {
     const cc = COIN_COSTS[bd.level] || 9999;
     const can = bd.level < 9 && bd.powerPoints >= pp && saveData.coins >= cc;
     const expanded = expandedBrawler === i;
+    const skinCol = getSkinColor(i);
     h += '<div class="brawler-card-full ' + (!bd.unlocked ? 'locked' : '') + '" onclick="toggleBrawlerDetail(' + i + ')">';
-    h += '<div class="bcf-icon" style="background:' + b.color + '33;border-color:' + b.color + '">' + b.icon + '</div>';
+    // Mini 3D preview canvas
+    h += '<canvas class="bcf-canvas" id="bcf-canvas-' + i + '" width="120" height="140"></canvas>';
     h += '<div class="bcf-name">' + b.name + '</div>';
     h += '<div class="bcf-role">' + b.role + '</div>';
     if (bd.unlocked) {
       h += '<div class="bcf-level">Level ' + bd.level + ' / 9</div>';
       h += '<div class="bcf-pp-bar"><div class="bcf-pp-fill" style="width:' + Math.min(100, (bd.powerPoints / pp) * 100) + '%"></div></div>';
       h += '<div class="bcf-stats">HP: ' + (b.hp + (bd.level - 1) * 200) + ' • DMG: ' + (b.damage + (bd.level - 1) * 30) + '</div>';
+      // Expanded detail
       h += '<div class="brawler-detail-panel ' + (expanded ? 'open' : '') + '">';
       h += '<div class="bdp-stats">';
       h += '<div class="bdp-stat"><span class="bdp-stat-label">HP</span><span class="bdp-stat-val">' + (b.hp + (bd.level - 1) * 200) + '</span></div>';
       h += '<div class="bdp-stat"><span class="bdp-stat-label">DMG</span><span class="bdp-stat-val">' + (b.damage + (bd.level - 1) * 30) + '</span></div>';
       h += '<div class="bdp-stat"><span class="bdp-stat-label">Range</span><span class="bdp-stat-val">' + b.range + '</span></div>';
       h += '<div class="bdp-stat"><span class="bdp-stat-label">Speed</span><span class="bdp-stat-val">' + b.speed + '</span></div>';
-      h += '<div class="bdp-stat"><span class="bdp-stat-label">Ammo</span><span class="bdp-stat-val">' + b.maxAmmo + '</span></div>';
-      h += '<div class="bdp-stat"><span class="bdp-stat-label">Trophies</span><span class="bdp-stat-val">' + bd.trophies + '</span></div>';
       h += '</div>';
-      h += '<div class="bdp-ability"><span class="bdp-key">Q</span> ' + b.abilityName + ' — ' + b.abilityDesc + '</div>';
-      h += '<div class="bdp-ability"><span class="bdp-key">R</span> ' + b.superName + ' — ' + b.superDesc + '</div>';
-      h += '<div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.35)">Power Points: ' + bd.powerPoints + ' / ' + pp + '</div>';
+      h += '<div class="bdp-ability"><span class="bdp-key">Q</span> ' + b.abilityName + '</div>';
+      h += '<div class="bdp-ability"><span class="bdp-key">R</span> ' + b.superName + '</div>';
+      // Skin selector
+      h += '<div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:6px">Skin:</div>';
+      h += '<div style="display:flex;gap:6px;flex-wrap:wrap">';
+      SKINS[i].forEach(skin => {
+        const owned = skin.type === 'free' || bd.skin === skin.id;
+        const active = bd.skin === skin.id;
+        if (owned || skin.type === 'free') {
+          h += '<div onclick="event.stopPropagation();equipSkin(' + i + ',\'' + skin.id + '\')" style="padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;border:2px solid ' + (active ? '#ffd740' : 'rgba(255,255,255,0.1)') + ';background:' + (active ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.03)') + '">' + skin.name + '</div>';
+        }
+      });
+      h += '</div>';
       h += '</div>';
       if (bd.level < 9) {
         h += '<button class="bcf-btn bcf-upgrade ' + (can ? '' : 'disabled') + '" onclick="event.stopPropagation();upgradeBrawlerFromPanel(' + i + ')">Upgrade — ' + cc + ' 🪙</button>';
@@ -1910,6 +2030,24 @@ function renderBrawlersPanel() {
   });
   h += '</div>';
   el.innerHTML = h;
+  // Draw mini 3D characters on each canvas
+  setTimeout(() => {
+    BRAWLERS.forEach((b, i) => {
+      const cv = document.getElementById('bcf-canvas-' + i);
+      if (!cv) return;
+      const c = cv.getContext('2d');
+      c.clearRect(0, 0, 120, 140);
+      const skinCol = getSkinColor(i);
+      draw3DChar(c, 60, 80, 1.5, i, skinCol, Math.sin(Date.now()/2000 + i) * 0.3, Date.now()/1000);
+    });
+  }, 50);
+}
+
+function equipSkin(brawlerIdx, skinId) {
+  saveData.brawlers[brawlerIdx].skin = skinId;
+  saveToDisk();
+  renderMenu();
+  renderBrawlersPanel();
 }
 
 function toggleBrawlerDetail(idx) {
@@ -1938,6 +2076,16 @@ function upgradeBrawlerFromPanel(idx) {
 function renderShopPanel() {
   const el = document.getElementById('shop-content');
   let h = '';
+
+  // Skin preview area (hidden by default)
+  h += '<div id="skin-preview-area" style="display:none;text-align:center;padding:20px;margin-bottom:20px;background:rgba(0,0,0,0.3);border-radius:16px;border:1px solid rgba(255,255,255,0.1)">';
+  h += '<canvas id="skin-preview-canvas" width="200" height="240" style="margin:0 auto"></canvas>';
+  h += '<div id="skin-preview-name" style="font-family:Russo One;font-size:18px;margin-top:8px"></div>';
+  h += '<div id="skin-preview-brawler" style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:12px"></div>';
+  h += '<div id="skin-preview-buttons"></div>';
+  h += '<div style="margin-top:8px"><span onclick="closeSkinPreview()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,0.4)">✕ Close Preview</span></div>';
+  h += '</div>';
+
   // Skins
   h += '<div class="shop-section"><div class="shop-section-title">🎨 Brawler Skins</div><div class="shop-grid-full">';
   BRAWLERS.forEach((b, bi) => {
@@ -1946,31 +2094,84 @@ function renderShopPanel() {
     SKINS[bi].forEach(skin => {
       if (skin.type === 'free') return;
       const owned = bd.skin === skin.id;
-      h += '<div class="shop-card"><div class="sc-preview" style="background:' + skin.color + '33;border-color:' + skin.color + '">' + b.icon + '</div><div class="sc-name">' + skin.name + '</div><div class="sc-sub">' + b.name + '</div>' + (owned ? '<div class="sc-owned">Equipped ✓</div>' : '<button class="sc-btn" onclick="buySkin(' + bi + ',\'' + skin.id + '\',' + skin.cost + ')">' + skin.cost + ' 💎</button>') + '</div>';
+      h += '<div class="shop-card" onclick="previewShopSkin(' + bi + ',\'' + skin.id + '\')" style="cursor:pointer">';
+      h += '<div class="sc-preview" style="background:' + skin.color + '33;border-color:' + skin.color + '">' + b.icon + '</div>';
+      h += '<div class="sc-name">' + skin.name + '</div>';
+      h += '<div class="sc-sub">' + b.name + '</div>';
+      h += owned ? '<div class="sc-owned">Equipped ✓</div>' : '<div style="font-size:11px;color:#7c4dff">Click to preview</div>';
+      h += '</div>';
     });
   });
   h += '</div></div>';
+
   // Power ups
   h += '<div class="shop-section"><div class="shop-section-title">⬆️ Power Ups</div><div class="shop-grid-full">';
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00"><span style="font-size:30px">⬆️</span></div><div class="sc-name">10 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="buyPowerPoints()">100 🪙</button></div>';
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00"><span style="font-size:30px">⬆️⬆️</span></div><div class="sc-name">30 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="buyPowerPointsBig()">250 🪙</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00"><span style="font-size:30px">⬆️</span></div><div class="sc-name">10 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="event.stopPropagation();buyPowerPoints()">100 🪙</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#ffab0033;border-color:#ffab00"><span style="font-size:30px">⬆️⬆️</span></div><div class="sc-name">30 Power Points</div><div class="sc-sub">Random Brawler</div><button class="sc-btn" onclick="event.stopPropagation();buyPowerPointsBig()">250 🪙</button></div>';
   h += '</div></div>';
+
   // Currency
   h += '<div class="shop-section"><div class="shop-section-title">💎 Premium Currency</div><div class="shop-grid-full">';
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff"><span style="font-size:30px">💎</span></div><div class="sc-name">50 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="buyBling()">300 🪙</button></div>';
-  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff"><span style="font-size:30px">💎💎</span></div><div class="sc-name">150 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="buyBlingBig()">800 🪙</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff"><span style="font-size:30px">💎</span></div><div class="sc-name">50 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="event.stopPropagation();buyBling()">300 🪙</button></div>';
+  h += '<div class="shop-card"><div class="sc-preview" style="background:#7c4dff33;border-color:#7c4dff"><span style="font-size:30px">💎💎</span></div><div class="sc-name">150 Bling</div><div class="sc-sub">Premium Currency</div><button class="sc-btn" onclick="event.stopPropagation();buyBlingBig()">800 🪙</button></div>';
   h += '</div></div>';
+
   // Unlock brawlers
   const locked = BRAWLERS.filter((b, i) => !saveData.brawlers[i].unlocked);
   if (locked.length > 0) {
     h += '<div class="shop-section"><div class="shop-section-title">🔓 Unlock Brawlers</div><div class="shop-grid-full">';
     BRAWLERS.forEach((b, i) => {
       if (saveData.brawlers[i].unlocked) return;
-      h += '<div class="shop-card"><div class="sc-preview" style="background:' + b.color + '33;border-color:' + b.color + '">' + b.icon + '</div><div class="sc-name">' + b.name + '</div><div class="sc-sub">' + b.role + '</div><button class="sc-btn" onclick="unlockBrawler(' + i + ')">500 🪙</button></div>';
+      h += '<div class="shop-card"><div class="sc-preview" style="background:' + b.color + '33;border-color:' + b.color + '">' + b.icon + '</div><div class="sc-name">' + b.name + '</div><div class="sc-sub">' + b.role + '</div><button class="sc-btn" onclick="event.stopPropagation();unlockBrawler(' + i + ')">500 🪙</button></div>';
     });
     h += '</div></div>';
   }
+
   el.innerHTML = h;
+}
+
+let skinPreviewInterval = null;
+function previewShopSkin(brawlerIdx, skinId) {
+  const skin = SKINS[brawlerIdx].find(s => s.id === skinId);
+  if (!skin) return;
+  const b = BRAWLERS[brawlerIdx];
+  const bd = saveData.brawlers[brawlerIdx];
+  const owned = bd.skin === skinId;
+
+  document.getElementById('skin-preview-area').style.display = 'block';
+  document.getElementById('skin-preview-name').textContent = skin.name;
+  document.getElementById('skin-preview-brawler').textContent = b.name + ' Skin';
+
+  let btns = '';
+  if (owned) {
+    btns = '<div style="color:#66bb6a;font-family:Russo One">Equipped ✓</div>';
+  } else {
+    btns = '<button class="sc-btn" onclick="buySkin(' + brawlerIdx + ',\'' + skinId + '\',' + skin.cost + ')" style="font-size:14px;padding:8px 24px">' + skin.cost + ' 💎 — Buy & Equip</button>';
+  }
+  document.getElementById('skin-preview-buttons').innerHTML = btns;
+
+  // Animate the preview
+  let prevRot = 0;
+  if (skinPreviewInterval) clearInterval(skinPreviewInterval);
+  skinPreviewInterval = setInterval(() => {
+    const cv = document.getElementById('skin-preview-canvas');
+    if (!cv) { clearInterval(skinPreviewInterval); return; }
+    const c = cv.getContext('2d');
+    c.clearRect(0, 0, 200, 240);
+    prevRot += 0.02;
+    // Platform
+    c.fillStyle = skin.color + '20';
+    c.beginPath(); c.ellipse(100, 210, 50, 12, 0, 0, Math.PI*2); c.fill();
+    c.strokeStyle = skin.color + '40';
+    c.lineWidth = 1;
+    c.beginPath(); c.ellipse(100, 210, 50, 12, 0, 0, Math.PI*2); c.stroke();
+    draw3DChar(c, 100, 150, 2, brawlerIdx, skin.color, prevRot, Date.now()/1000);
+  }, 30);
+}
+
+function closeSkinPreview() {
+  document.getElementById('skin-preview-area').style.display = 'none';
+  if (skinPreviewInterval) { clearInterval(skinPreviewInterval); skinPreviewInterval = null; }
 }
 
 function renderQuestsPanel() {
